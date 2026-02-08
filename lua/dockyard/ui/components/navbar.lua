@@ -16,8 +16,9 @@ function M.render(ctx)
 
 	-- Left items (Tabs)
 	local tabs = {
-		{ id = "containers", label = " Containers " },
-		{ id = "images", label = " Images " },
+		{ id = "containers", label = "   Containers " },
+		{ id = "images", label = " 󰏗  Images " },
+		{ id = "networks", label = " 󱂇  Networks " },
 	}
 
 	-- Right items (Actions)

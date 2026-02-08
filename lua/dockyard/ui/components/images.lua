@@ -1,12 +1,22 @@
 local M = {}
 
+local collapsed_nodes = {}
+
 local function copy(t)
 	local res = {}
 	for k, v in pairs(t) do res[k] = v end
 	return res
 end
 
-M.get_data = function()
+function M.toggle_collapse(id, collapsed)
+	if collapsed == nil then
+		collapsed_nodes[id] = not collapsed_nodes[id]
+	else
+		collapsed_nodes[id] = collapsed
+	end
+end
+
+local function get_tree_data()
 	local images_raw = require("dockyard.images").all()
 	local containers_raw = require("dockyard.containers").all()
 	
@@ -19,23 +29,33 @@ M.get_data = function()
 	for _, img_raw in ipairs(images_raw) do
 		local img = copy(img_raw)
 		img._is_image = true
+		
+		local is_collapsed = collapsed_nodes[img.id]
+		if is_collapsed then
+			img._indent = "󰅂 " -- Collapsed icon
+		else
+			img._indent = "󰅀 " -- Expanded icon
+		end
+		
 		tree[#tree + 1] = img
 		
-		-- Find child containers
-		for _, cnt in ipairs(containers) do
-			if cnt.image == img.repository .. ":" .. img.tag or cnt.image == img.id then
-				cnt._indent = "  └─ "
-				cnt._is_container = true
-				-- Add the status icon directly to the name for children
-				local status_icon = "●"
-				local status = (cnt.status or ""):lower()
-				local icon_hl = status:find("up", 1, true) == 1 and "DockyardStatusRunning" or "DockyardStatusStopped"
-				
-				cnt._custom_icon_logic = true
-				cnt.repository = status_icon .. " " .. cnt.name
-				cnt._name_icon_hl = { group = icon_hl, len = #status_icon }
-				
-				tree[#tree + 1] = cnt
+		if not is_collapsed then
+			-- Find child containers
+			for _, cnt in ipairs(containers) do
+				if cnt.image == img.repository .. ":" .. img.tag or cnt.image == img.id then
+					cnt._indent = "  └─ "
+					cnt._is_container = true
+					-- Add the status icon directly to the name for children
+					local status_icon = "●"
+					local status = (cnt.status or ""):lower()
+					local icon_hl = status:find("up", 1, true) == 1 and "DockyardStatusRunning" or "DockyardStatusStopped"
+					
+					cnt._custom_icon_logic = true
+					cnt.repository = status_icon .. " " .. cnt.name
+					cnt._name_icon_hl = { group = icon_hl, len = #status_icon }
+					
+					tree[#tree + 1] = cnt
+				end
 			end
 		end
 	end
@@ -60,7 +80,7 @@ M.config = {
 	},
 	get_row_icon = function(row)
 		if row._is_image then
-			return "󰠱", "DockyardImage"
+			return "󰏗", "DockyardImage"
 		end
 		local status = (row.status or ""):lower()
 		if status:find("up", 1, true) == 1 then
@@ -81,9 +101,8 @@ M.config = {
 	empty_message = "No images found",
 }
 
-local original_get_data = M.get_data
 M.get_data = function()
-	local data = original_get_data()
+	local data = get_tree_data()
 	for _, row in ipairs(data) do
 		M.config.transform_row(row)
 	end
