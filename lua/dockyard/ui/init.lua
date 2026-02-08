@@ -36,7 +36,7 @@ function M.render(mode)
 	vim.api.nvim_win_set_option(state.win, "winhighlight", "CursorLine:DockyardCursorLine")
 
 	local table_start, comp = renderer.draw()
-	renderer.attach_keymaps(table_start, comp)
+	require("dockyard.ui.keymaps").setup(table_start, comp)
 
 	return state.win
 end

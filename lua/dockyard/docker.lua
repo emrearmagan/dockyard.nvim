@@ -8,6 +8,9 @@ local FORMAT =
 local IMG_FORMAT =
 	[[{"id": {{json .ID}}, "repository": {{json .Repository}}, "tag": {{json .Tag}}, "created": {{json .CreatedAt}}, "created_since": {{json .CreatedSince}}, "size": {{json .Size}}}]]
 
+local NET_FORMAT =
+	[[{"id": {{json .ID}}, "name": {{json .Name}}, "driver": {{json .Driver}}, "scope": {{json .Scope}}, "created": {{json .CreatedAt}}}]]
+
 local function run_docker(args, opts)
 	local job_opts = vim.tbl_deep_extend("force", opts or {}, {
 		command = "docker",
@@ -77,6 +80,81 @@ function M.list_images(opts)
 	end
 
 	return parse_lines(result)
+end
+
+function M.list_networks(opts)
+	opts = opts or {}
+	local job = run_docker({
+		"network",
+		"ls",
+		"--format",
+		NET_FORMAT,
+	}, opts.job)
+
+	local ok, result = pcall(function()
+		return job:sync(opts.timeout or 10000)
+	end)
+
+	if not ok then
+		return {}, "failed to run docker"
+	end
+
+	return parse_lines(result)
+end
+
+function M.container_action(id, action, opts)
+	opts = opts or {}
+	local job = run_docker({ "container", action, id }, opts.job)
+	local ok, _ = pcall(function()
+		return job:sync(opts.timeout or 10000)
+	end)
+	return ok
+end
+
+function M.image_action(id, action, opts)
+	opts = opts or {}
+	local job = run_docker({ "image", action, id }, opts.job)
+	local ok, _ = pcall(function()
+		return job:sync(opts.timeout or 10000)
+	end)
+	return ok
+end
+
+function M.network_action(id, action, opts)
+	opts = opts or {}
+	local job = run_docker({ "network", action, id }, opts.job)
+	local ok, _ = pcall(function()
+		return job:sync(opts.timeout or 10000)
+	end)
+	return ok
+end
+
+function M.image_prune(opts)
+	opts = opts or {}
+	local job = run_docker({ "image", "prune", "-f" }, opts.job)
+	local ok, _ = pcall(function()
+		return job:sync(opts.timeout or 10000)
+	end)
+	return ok
+end
+
+function M.inspect(id, opts)
+	opts = opts or {}
+	local job = run_docker({ "inspect", id }, opts.job)
+	local ok, result = pcall(function()
+		return job:sync(opts.timeout or 10000)
+	end)
+
+	if not ok or not result then
+		return nil, "failed to inspect"
+	end
+
+	local full_text = table.concat(result, "\n")
+	local ok_json, decoded = pcall(vim.json.decode, full_text)
+	if ok_json and decoded and decoded[1] then
+		return decoded[1]
+	end
+	return nil, "failed to decode inspect output"
 end
 
 return M

@@ -20,11 +20,17 @@ function M.ensure_hl_groups()
 	vim.api.nvim_set_hl(0, "DockyardTabActive", { bg = c.tab_active_bg, fg = c.tab_active_fg, bold = true })
 	vim.api.nvim_set_hl(0, "DockyardTabInactive", { bg = c.tab_inactive_bg, fg = c.tab_inactive_fg })
 	vim.api.nvim_set_hl(0, "DockyardAction", { bg = c.action_bg, fg = c.action_fg })
+	vim.api.nvim_set_hl(0, "DockyardActionRefresh", { bg = c.action_bg, fg = c.action_refresh_fg, bold = true })
+	vim.api.nvim_set_hl(0, "DockyardActionHelp", { bg = c.action_bg, fg = c.action_help_fg, bold = true })
 
 	vim.api.nvim_set_hl(0, "DockyardColumnHeader", { fg = c.column_header, bold = true })
 	vim.api.nvim_set_hl(0, "DockyardCursorLine", { bg = c.cursor_line })
 	vim.api.nvim_set_hl(0, "DockyardStatusRunning", { fg = c.status_running, bold = true })
 	vim.api.nvim_set_hl(0, "DockyardStatusStopped", { fg = c.status_stopped, bold = true })
+
+	-- Help highlights
+	vim.api.nvim_set_hl(0, "DockyardHelpKey", { fg = c.help_key, bold = true })
+	vim.api.nvim_set_hl(0, "DockyardHelpDesc", { fg = c.help_desc })
 end
 
 function M.draw()
@@ -89,44 +95,6 @@ function M.draw()
 	end
 
 	return table_start_line, comp
-end
-
-function M.attach_keymaps(table_start, comp)
-	local map_opts = { buffer = state.buf, nowait = true, silent = true }
-	local function move_to_row(step)
-		local curr = vim.api.nvim_win_get_cursor(0)[1]
-		local data_start = table_start + 3
-		local rows = comp.get_data()
-		if #rows == 0 then return end
-		local next_l = math.min(math.max(data_start, curr + step), data_start + #rows - 1)
-		vim.api.nvim_win_set_cursor(0, { next_l, MARGIN })
-	end
-
-	vim.keymap.set("n", "j", function() move_to_row(1) end, map_opts)
-	vim.keymap.set("n", "k", function() move_to_row(-1) end, map_opts)
-	
-	-- Tab switching
-	vim.keymap.set("n", "<Tab>", function()
-		state.current_view = state.current_view == "containers" and "images" or "containers"
-		-- Note: This requires a placeholder images component to exist
-		require("dockyard.ui").render()
-	end, map_opts)
-
-	vim.keymap.set("n", "r", function() 
-		if state.current_view == "containers" then
-			require("dockyard.containers").refresh({ silent = true })
-		else
-			require("dockyard.images").refresh({ silent = true })
-		end
-		require("dockyard.ui").render() 
-	end, map_opts)
-
-	vim.keymap.set("n", "q", function() require("dockyard.ui").close() end, map_opts)
-
-	local data_start = table_start + 3
-	if #comp.get_data() > 0 and vim.api.nvim_win_get_cursor(state.win)[1] < data_start then
-		vim.api.nvim_win_set_cursor(state.win, { data_start, MARGIN })
-	end
 end
 
 return M
