@@ -47,6 +47,9 @@ M.groups = {
 	
 	action_bg = M.palette.surface0,
 	action_fg = M.palette.text,
+
+	action_refresh_fg = M.palette.green,
+	action_help_fg = M.palette.peach,
 	
 	column_header = M.palette.overlay2,
 	
@@ -54,6 +57,11 @@ M.groups = {
 	
 	status_running = M.palette.green,
 	status_stopped = M.palette.red,
+
+	help_key = M.palette.peach,
+	help_desc = M.palette.text,
+	help_header = M.palette.blue,
+	help_border = M.palette.surface2,
 }
 
 return M

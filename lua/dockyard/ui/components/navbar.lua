@@ -23,8 +23,8 @@ function M.render(ctx)
 
 	-- Right items (Actions)
 	local actions = {
-		{ key = "r", label = " Refresh (r) " },
-		{ key = "?", label = " Help (?) " },
+		{ key = "R", label = " Refresh (R) ", hl = "DockyardActionRefresh" },
+		{ key = "?", label = " Help (?) ", hl = "DockyardActionHelp" },
 	}
 
 	local line = string.rep(" ", MARGIN)
@@ -74,7 +74,7 @@ function M.render(ctx)
 			line = 0,
 			col_start = current_byte_pos,
 			col_end = current_byte_pos + #label,
-			group = "DockyardAction",
+			group = action.hl or "DockyardAction",
 		}
 		current_byte_pos = current_byte_pos + #label
 		current_display_pos = current_display_pos + text_width(label)
