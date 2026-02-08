@@ -50,6 +50,8 @@ M.groups = {
 	
 	column_header = M.palette.overlay2,
 	
+	cursor_line = M.palette.surface1,
+	
 	status_running = M.palette.green,
 	status_stopped = M.palette.red,
 }

@@ -1,5 +1,6 @@
 local docker = require("dockyard.docker")
 local containers = require("dockyard.containers")
+local images = require("dockyard.images")
 local ui = require("dockyard.ui")
 
 local M = {}
@@ -22,11 +23,11 @@ local function ensure_commands()
 
   vim.api.nvim_create_user_command("DockyardRefresh", function()
     require("dockyard").refresh()
-  end, { desc = "Refresh Dockyard container cache" })
+  end, { desc = "Refresh Dockyard cache" })
 end
 
 function M.setup(opts)
-	vim.notify("Dockyard.nvim scaffold loaded", vim.log.levels.INFO)
+	vim.notify("Dockyard.nvim loaded", vim.log.levels.INFO)
 	M._opts = opts or {}
 
 	if M._opts.notifier then
@@ -37,23 +38,29 @@ function M.setup(opts)
 
 	if M._opts.auto_refresh ~= false then
 		containers.refresh({ silent = true })
+		images.refresh({ silent = true })
 	end
 end
 
 M.list_containers = docker.list_containers
+M.list_images = docker.list_images
 M.containers = containers
+M.images = images
 
 function M.refresh(opts)
-	return containers.refresh(opts)
+	containers.refresh(opts)
+	images.refresh(opts)
 end
 
 function M.open()
 	containers.refresh({ silent = true })
+	images.refresh({ silent = true })
 	return ui.open()
 end
 
 function M.open_full()
 	containers.refresh({ silent = true })
+	images.refresh({ silent = true })
 	if ui.open_full then
 		return ui.open_full()
 	end

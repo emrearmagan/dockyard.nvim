@@ -22,6 +22,7 @@ function M.ensure_hl_groups()
 	vim.api.nvim_set_hl(0, "DockyardAction", { bg = c.action_bg, fg = c.action_fg })
 
 	vim.api.nvim_set_hl(0, "DockyardColumnHeader", { fg = c.column_header, bold = true })
+	vim.api.nvim_set_hl(0, "DockyardCursorLine", { bg = c.cursor_line })
 	vim.api.nvim_set_hl(0, "DockyardStatusRunning", { fg = c.status_running, bold = true })
 	vim.api.nvim_set_hl(0, "DockyardStatusStopped", { fg = c.status_stopped, bold = true })
 end
@@ -112,9 +113,14 @@ function M.attach_keymaps(table_start, comp)
 	end, map_opts)
 
 	vim.keymap.set("n", "r", function() 
-		require("dockyard").refresh({ silent = true })
+		if state.current_view == "containers" then
+			require("dockyard.containers").refresh({ silent = true })
+		else
+			require("dockyard.images").refresh({ silent = true })
+		end
 		require("dockyard.ui").render() 
 	end, map_opts)
+
 	vim.keymap.set("n", "q", function() require("dockyard.ui").close() end, map_opts)
 
 	local data_start = table_start + 3

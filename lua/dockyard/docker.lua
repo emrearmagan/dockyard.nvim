@@ -5,6 +5,9 @@ local M = {}
 local FORMAT =
 	[[{"id": {{json .ID}}, "name": {{json .Names}}, "image": {{json .Image}}, "command": {{json .Command}}, "status": {{json .Status}}, "ports": {{json .Ports}}, "networks": {{json .Networks}}, "created": {{json .CreatedAt}}, "created_since": {{json .RunningFor}}}]]
 
+local IMG_FORMAT =
+	[[{"id": {{json .ID}}, "repository": {{json .Repository}}, "tag": {{json .Tag}}, "created": {{json .CreatedAt}}, "created_since": {{json .CreatedSince}}, "size": {{json .Size}}}]]
+
 local function run_docker(args, opts)
 	local job_opts = vim.tbl_deep_extend("force", opts or {}, {
 		command = "docker",
@@ -43,6 +46,26 @@ function M.list_containers(opts)
 		"-a",
 		"--format",
 		FORMAT,
+	}, opts.job)
+
+	local ok, result = pcall(function()
+		return job:sync(opts.timeout or 10000)
+	end)
+
+	if not ok then
+		return {}, "failed to run docker"
+	end
+
+	return parse_lines(result)
+end
+
+function M.list_images(opts)
+	opts = opts or {}
+	local job = run_docker({
+		"image",
+		"ls",
+		"--format",
+		IMG_FORMAT,
 	}, opts.job)
 
 	local ok, result = pcall(function()
