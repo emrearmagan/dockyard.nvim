@@ -12,7 +12,7 @@ local function get_keymaps()
 			section = "Navigation",
 			maps = {
 				{ key = "j / k", desc = "Move cursor down / up" },
-				{ key = "H / L", desc = "Previous / Next Tab" },
+				{ key = "Tab / S-Tab", desc = "Next / Previous Tab" },
 			},
 		},
 		{
@@ -32,7 +32,7 @@ local function get_keymaps()
 				{ key = "d", desc = "Remove image" },
 				{ key = "P", desc = "Prune dangling images" },
 				{ key = "K / CR", desc = "Show details (Inspect)" },
-				{ key = "Tab", desc = "Toggle collapse / expand" },
+				{ key = "o", desc = "Toggle collapse / expand" },
 			},
 		},
 		{
@@ -40,7 +40,7 @@ local function get_keymaps()
 			maps = {
 				{ key = "d", desc = "Remove network" },
 				{ key = "K / CR", desc = "Show details (Inspect)" },
-				{ key = "Tab", desc = "Toggle collapse / expand" },
+				{ key = "o", desc = "Toggle collapse / expand" },
 			},
 		},
 		{

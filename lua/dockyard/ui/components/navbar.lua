@@ -13,13 +13,23 @@ function M.render(ctx)
 	local current_view = ctx.current_view
 	local lines = {}
 	local highlights = {}
+	local config = require("dockyard.config")
 
-	-- Left items (Tabs)
-	local tabs = {
-		{ id = "containers", label = "   Containers " },
-		{ id = "images", label = " 󰏗  Images " },
-		{ id = "networks", label = " 󱂇  Networks " },
+	-- Defined possible tabs
+	local all_tabs = {
+		containers = { label = "   Containers " },
+		images = { label = " 󰏗  Images " },
+		networks = { label = " 󱂇  Networks " },
 	}
+
+	-- Construct tabs based on view_order
+	local tabs = {}
+	local view_order = config.options.display.view_order or { "containers", "images", "networks" }
+	for _, id in ipairs(view_order) do
+		if all_tabs[id] then
+			table.insert(tabs, { id = id, label = all_tabs[id].label })
+		end
+	end
 
 	-- Right items (Actions)
 	local actions = {

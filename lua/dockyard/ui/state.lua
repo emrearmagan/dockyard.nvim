@@ -3,6 +3,7 @@ local M = {
 	buf = nil,
 	mode = "split",
 	current_view = "containers",
+	refresh_timer = nil,
 }
 
 return M

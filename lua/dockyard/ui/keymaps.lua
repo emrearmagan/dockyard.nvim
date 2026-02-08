@@ -82,63 +82,43 @@ function M.setup(table_start, comp)
 	vim.keymap.set("n", "j", function() move_to_row(1) end, map_opts)
 	vim.keymap.set("n", "k", function() move_to_row(-1) end, map_opts)
 	
-	-- View Switching (Previously Tab/S-Tab)
+	-- View Switching
 	local function next_view()
-		if state.current_view == "containers" then
-			state.current_view = "images"
-		elseif state.current_view == "images" then
-			state.current_view = "networks"
-		else
-			state.current_view = "containers"
+		local order = require("dockyard.config").options.display.view_order or { "containers", "images", "networks" }
+		local current_idx = 1
+		for i, v in ipairs(order) do
+			if v == state.current_view then
+				current_idx = i
+				break
+			end
 		end
+		local next_idx = (current_idx % #order) + 1
+		state.current_view = order[next_idx]
 		require("dockyard.ui").render()
 	end
 
 	local function prev_view()
-		if state.current_view == "containers" then
-			state.current_view = "networks"
-		elseif state.current_view == "networks" then
-			state.current_view = "images"
-		else
-			state.current_view = "containers"
+		local order = require("dockyard.config").options.display.view_order or { "containers", "images", "networks" }
+		local current_idx = 1
+		for i, v in ipairs(order) do
+			if v == state.current_view then
+				current_idx = i
+				break
+			end
 		end
+		local prev_idx = current_idx - 1
+		if prev_idx < 1 then prev_idx = #order end
+		state.current_view = order[prev_idx]
 		require("dockyard.ui").render()
 	end
 
-	vim.keymap.set("n", "L", next_view, map_opts)
-	vim.keymap.set("n", "H", prev_view, map_opts)
+	-- Global Nav (overridden by specific views if needed)
+	vim.keymap.set("n", "<Tab>", next_view, map_opts)
+	vim.keymap.set("n", "<S-Tab>", prev_view, map_opts)
 
 	-- Actions
 	if state.current_view == "containers" then
-		vim.keymap.set("n", "s", function()
-			local item = get_current_item()
-			if not item then return end
-			local is_running = (item.status or ""):lower():find("up", 1, true) == 1
-			local action = is_running and "stop" or "start"
-			run_action(is_running and "Stopping" or "Starting", function(id)
-				return require("dockyard.docker").container_action(id, action)
-			end)
-		end, map_opts)
-
-		vim.keymap.set("n", "r", function()
-			run_action("Restarting", function(id)
-				return require("dockyard.docker").container_action(id, "restart")
-			end)
-		end, map_opts)
-
-		vim.keymap.set("n", "d", function()
-			local item = get_current_item()
-			if not item then return end
-			vim.ui.input({ prompt = "Remove container " .. item.name .. "? (y/n): " }, function(input)
-				if input and input:lower() == "y" then
-					run_action("Removing", function(id)
-						return require("dockyard.docker").container_action(id, "rm")
-					end)
-				end
-			end)
-		end, map_opts)
-
-		-- Debugging: Logs
+		-- Logs on L (overrides next_view)
 		vim.keymap.set("n", "L", function()
 			local item = get_current_item()
 			if not item or item._is_spacer then return end
@@ -199,8 +179,8 @@ function M.setup(table_start, comp)
 			end)
 		end, map_opts)
 
-		-- Tree View: Toggle Collapse/Expand (Tab)
-		vim.keymap.set("n", "<Tab>", function()
+		-- Tree View: Toggle Collapse/Expand (o)
+		vim.keymap.set("n", "o", function()
 			local item = get_current_item()
 			if item and item._is_image then
 				require("dockyard.ui.components.images").toggle_collapse(item.id)
@@ -231,8 +211,8 @@ function M.setup(table_start, comp)
 			end)
 		end, map_opts)
 
-		-- Tree View: Toggle Collapse/Expand (Tab)
-		vim.keymap.set("n", "<Tab>", function()
+		-- Tree View: Toggle Collapse/Expand (o)
+		vim.keymap.set("n", "o", function()
 			local item = get_current_item()
 			if item and item._is_network then
 				require("dockyard.ui.components.networks").toggle_collapse(item.id)

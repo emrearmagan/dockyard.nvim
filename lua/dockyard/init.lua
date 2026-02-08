@@ -3,6 +3,8 @@ local containers = require("dockyard.containers")
 local images = require("dockyard.images")
 local networks = require("dockyard.networks")
 local ui = require("dockyard.ui")
+local config = require("dockyard.config")
+local state = require("dockyard.ui.state")
 
 local M = {}
 
@@ -27,8 +29,35 @@ local function ensure_commands()
 	end, { desc = "Refresh Dockyard cache" })
 end
 
+local function stop_timer()
+	if state.refresh_timer then
+		state.refresh_timer:stop()
+		if not state.refresh_timer:is_closing() then
+			state.refresh_timer:close()
+		end
+		state.refresh_timer = nil
+	end
+end
+
+local function start_timer()
+	stop_timer()
+	local interval = config.options.display.refresh_interval
+	if interval and interval > 0 then
+		state.refresh_timer = vim.loop.new_timer()
+		state.refresh_timer:start(interval, interval, vim.schedule_wrap(function()
+			if state.buf and vim.api.nvim_buf_is_valid(state.buf) then
+				M.refresh({ silent = true })
+				ui.render(state.mode)
+			else
+				stop_timer()
+			end
+		end))
+	end
+end
+
 function M.setup(opts)
-	M._opts = opts or {}
+	config.setup(opts)
+	M._opts = config.options
 
 	if M._opts.notifier then
 		containers.set_notifier(M._opts.notifier)
@@ -41,14 +70,13 @@ function M.setup(opts)
 		images.refresh({ silent = true })
 		networks.refresh({ silent = true })
 	end
-end
 
-M.list_containers = docker.list_containers
-M.list_images = docker.list_images
-M.list_networks = docker.list_networks
-M.containers = containers
-M.images = images
-M.networks = networks
+	-- Initialize current_view from order if containers not in order
+	local order = M._opts.display.view_order
+	if order and #order > 0 then
+		state.current_view = order[1]
+	end
+end
 
 function M.refresh(opts)
 	containers.refresh(opts)
@@ -57,20 +85,23 @@ function M.refresh(opts)
 end
 
 function M.open()
-	containers.refresh({ silent = true })
-	images.refresh({ silent = true })
-	networks.refresh({ silent = true })
-	return ui.open()
+	M.refresh({ silent = true })
+	local win = ui.open()
+	start_timer()
+	return win
 end
 
 function M.open_full()
-	containers.refresh({ silent = true })
-	images.refresh({ silent = true })
-	networks.refresh({ silent = true })
-	if ui.open_full then
-		return ui.open_full()
-	end
-	return ui.open()
+	M.refresh({ silent = true })
+	local win = ui.open_full()
+	start_timer()
+	return win
+end
+
+function M.close()
+	stop_timer()
+	return ui.close()
 end
 
 return M
+
