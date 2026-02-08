@@ -93,7 +93,7 @@ M.config = {
 		if row._is_network then
 			row.name_display = row.name
 		elseif row._is_container then
-			row.driver = "-"
+			row.driver = row.status
 			row.scope = "-"
 		end
 		return row
