@@ -12,8 +12,7 @@ local function get_keymaps()
 			section = "Navigation",
 			maps = {
 				{ key = "j / k", desc = "Move cursor down / up" },
-				{ key = "Tab", desc = "Next Tab (Containers/Images/Networks)" },
-				{ key = "S-Tab", desc = "Previous Tab" },
+				{ key = "H / L", desc = "Previous / Next Tab" },
 			},
 		},
 		{
@@ -22,9 +21,9 @@ local function get_keymaps()
 				{ key = "s", desc = "Toggle Start / Stop" },
 				{ key = "r", desc = "Restart container" },
 				{ key = "d", desc = "Remove container" },
-				{ key = "L", desc = "View logs (follow)" },
-				{ key = "i", desc = "Inspect container" },
-				{ key = "<CR>", desc = "Open shell (/bin/sh)" },
+				{ key = "l", desc = "View logs (follow)" },
+				{ key = "i / K / CR", desc = "Show details (Inspect)" },
+				{ key = "S", desc = "Open shell (/bin/sh)" },
 			},
 		},
 		{
@@ -32,16 +31,16 @@ local function get_keymaps()
 			maps = {
 				{ key = "d", desc = "Remove image" },
 				{ key = "P", desc = "Prune dangling images" },
-				{ key = "i", desc = "Inspect image" },
-				{ key = "<CR>", desc = "Toggle collapse / expand" },
+				{ key = "i / K / CR", desc = "Show details (Inspect)" },
+				{ key = "Tab", desc = "Toggle collapse / expand" },
 			},
 		},
 		{
 			section = "Network Actions",
 			maps = {
 				{ key = "d", desc = "Remove network" },
-				{ key = "i", desc = "Inspect network" },
-				{ key = "<CR>", desc = "Toggle collapse / expand" },
+				{ key = "i / K / CR", desc = "Show details (Inspect)" },
+				{ key = "Tab", desc = "Toggle collapse / expand" },
 			},
 		},
 		{

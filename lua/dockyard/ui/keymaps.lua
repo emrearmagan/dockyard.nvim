@@ -78,12 +78,12 @@ function M.setup(table_start, comp)
 		end)
 	end
 
-	-- Basic Navigation
+	-- Navigation & View switching
 	vim.keymap.set("n", "j", function() move_to_row(1) end, map_opts)
 	vim.keymap.set("n", "k", function() move_to_row(-1) end, map_opts)
 	
-	-- Tab switching
-	vim.keymap.set("n", "<Tab>", function()
+	-- View Switching (Previously Tab/S-Tab)
+	local function next_view()
 		if state.current_view == "containers" then
 			state.current_view = "images"
 		elseif state.current_view == "images" then
@@ -92,9 +92,9 @@ function M.setup(table_start, comp)
 			state.current_view = "containers"
 		end
 		require("dockyard.ui").render()
-	end, map_opts)
+	end
 
-	vim.keymap.set("n", "<S-Tab>", function()
+	local function prev_view()
 		if state.current_view == "containers" then
 			state.current_view = "networks"
 		elseif state.current_view == "networks" then
@@ -103,7 +103,10 @@ function M.setup(table_start, comp)
 			state.current_view = "containers"
 		end
 		require("dockyard.ui").render()
-	end, map_opts)
+	end
+
+	vim.keymap.set("n", "L", next_view, map_opts)
+	vim.keymap.set("n", "H", prev_view, map_opts)
 
 	-- Actions
 	if state.current_view == "containers" then
@@ -136,7 +139,7 @@ function M.setup(table_start, comp)
 		end, map_opts)
 
 		-- Debugging: Logs
-		vim.keymap.set("n", "L", function()
+		vim.keymap.set("n", "l", function()
 			local item = get_current_item()
 			if not item or item._is_spacer then return end
 			vim.cmd("belowright split")
@@ -150,8 +153,8 @@ function M.setup(table_start, comp)
 			vim.cmd("normal! G")
 		end, map_opts)
 
-		-- Debugging: Shell (Using ToggleTerm with native fallback)
-		vim.keymap.set("n", "<CR>", function()
+		-- Debugging: Shell
+		vim.keymap.set("n", "S", function()
 			local item = get_current_item()
 			if not item or item._is_spacer then return end
 			
@@ -159,17 +162,19 @@ function M.setup(table_start, comp)
 			if term then
 				term:toggle()
 			else
-				-- Fallback to our native floating terminal if toggleterm is still not found
 				require("dockyard.ui.terminal").toggle(item)
 			end
 		end, map_opts)
 
-		-- Debugging: Inspect
-		vim.keymap.set("n", "i", function()
+		-- Debugging: Inspect (CR or K)
+		local function open_inspect()
 			local item = get_current_item()
 			if not item or item._is_spacer then return end
 			require("dockyard.ui.inspect").open(item)
-		end, map_opts)
+		end
+		vim.keymap.set("n", "<CR>", open_inspect, map_opts)
+		vim.keymap.set("n", "K", open_inspect, map_opts)
+		vim.keymap.set("n", "i", open_inspect, map_opts)
 	end
 
 	if state.current_view == "images" then
@@ -195,8 +200,8 @@ function M.setup(table_start, comp)
 			end)
 		end, map_opts)
 
-		-- Tree View: Toggle Collapse/Expand
-		vim.keymap.set("n", "<CR>", function()
+		-- Tree View: Toggle Collapse/Expand (Tab)
+		vim.keymap.set("n", "<Tab>", function()
 			local item = get_current_item()
 			if item and item._is_image then
 				require("dockyard.ui.components.images").toggle_collapse(item.id)
@@ -204,12 +209,15 @@ function M.setup(table_start, comp)
 			end
 		end, map_opts)
 
-		-- Debugging: Inspect
-		vim.keymap.set("n", "i", function()
+		-- Debugging: Inspect (CR or K)
+		local function open_inspect()
 			local item = get_current_item()
 			if not item or item._is_spacer then return end
 			require("dockyard.ui.inspect").open(item)
-		end, map_opts)
+		end
+		vim.keymap.set("n", "<CR>", open_inspect, map_opts)
+		vim.keymap.set("n", "K", open_inspect, map_opts)
+		vim.keymap.set("n", "i", open_inspect, map_opts)
 	end
 
 	if state.current_view == "networks" then
@@ -225,8 +233,8 @@ function M.setup(table_start, comp)
 			end)
 		end, map_opts)
 
-		-- Tree View: Toggle Collapse/Expand
-		vim.keymap.set("n", "<CR>", function()
+		-- Tree View: Toggle Collapse/Expand (Tab)
+		vim.keymap.set("n", "<Tab>", function()
 			local item = get_current_item()
 			if item and item._is_network then
 				require("dockyard.ui.components.networks").toggle_collapse(item.id)
@@ -234,12 +242,15 @@ function M.setup(table_start, comp)
 			end
 		end, map_opts)
 
-		-- Debugging: Inspect
-		vim.keymap.set("n", "i", function()
+		-- Debugging: Inspect (CR or K)
+		local function open_inspect()
 			local item = get_current_item()
 			if not item or item._is_spacer then return end
 			require("dockyard.ui.inspect").open(item)
-		end, map_opts)
+		end
+		vim.keymap.set("n", "<CR>", open_inspect, map_opts)
+		vim.keymap.set("n", "K", open_inspect, map_opts)
+		vim.keymap.set("n", "i", open_inspect, map_opts)
 	end
 
 	vim.keymap.set("n", "R", function() 
