@@ -32,6 +32,8 @@ function M.render(mode)
 	vim.api.nvim_win_set_option(state.win, "signcolumn", "no")
 	vim.api.nvim_win_set_option(state.win, "foldcolumn", "0")
 	vim.api.nvim_win_set_option(state.win, "winfixwidth", true)
+	vim.api.nvim_win_set_option(state.win, "cursorline", true)
+	vim.api.nvim_win_set_option(state.win, "winhighlight", "CursorLine:DockyardCursorLine")
 
 	local table_start, comp = renderer.draw()
 	renderer.attach_keymaps(table_start, comp)
