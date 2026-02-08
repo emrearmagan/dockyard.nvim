@@ -139,7 +139,7 @@ function M.setup(table_start, comp)
 		end, map_opts)
 
 		-- Debugging: Logs
-		vim.keymap.set("n", "l", function()
+		vim.keymap.set("n", "L", function()
 			local item = get_current_item()
 			if not item or item._is_spacer then return end
 			vim.cmd("belowright split")
@@ -174,7 +174,6 @@ function M.setup(table_start, comp)
 		end
 		vim.keymap.set("n", "<CR>", open_inspect, map_opts)
 		vim.keymap.set("n", "K", open_inspect, map_opts)
-		vim.keymap.set("n", "i", open_inspect, map_opts)
 	end
 
 	if state.current_view == "images" then
@@ -217,7 +216,6 @@ function M.setup(table_start, comp)
 		end
 		vim.keymap.set("n", "<CR>", open_inspect, map_opts)
 		vim.keymap.set("n", "K", open_inspect, map_opts)
-		vim.keymap.set("n", "i", open_inspect, map_opts)
 	end
 
 	if state.current_view == "networks" then
@@ -250,7 +248,6 @@ function M.setup(table_start, comp)
 		end
 		vim.keymap.set("n", "<CR>", open_inspect, map_opts)
 		vim.keymap.set("n", "K", open_inspect, map_opts)
-		vim.keymap.set("n", "i", open_inspect, map_opts)
 	end
 
 	vim.keymap.set("n", "R", function() 

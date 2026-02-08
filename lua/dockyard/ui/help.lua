@@ -21,8 +21,8 @@ local function get_keymaps()
 				{ key = "s", desc = "Toggle Start / Stop" },
 				{ key = "r", desc = "Restart container" },
 				{ key = "d", desc = "Remove container" },
-				{ key = "l", desc = "View logs (follow)" },
-				{ key = "i / K / CR", desc = "Show details (Inspect)" },
+				{ key = "L", desc = "View logs (follow)" },
+				{ key = "K / CR", desc = "Show details (Inspect)" },
 				{ key = "S", desc = "Open shell (/bin/sh)" },
 			},
 		},
@@ -31,7 +31,7 @@ local function get_keymaps()
 			maps = {
 				{ key = "d", desc = "Remove image" },
 				{ key = "P", desc = "Prune dangling images" },
-				{ key = "i / K / CR", desc = "Show details (Inspect)" },
+				{ key = "K / CR", desc = "Show details (Inspect)" },
 				{ key = "Tab", desc = "Toggle collapse / expand" },
 			},
 		},
@@ -39,7 +39,7 @@ local function get_keymaps()
 			section = "Network Actions",
 			maps = {
 				{ key = "d", desc = "Remove network" },
-				{ key = "i / K / CR", desc = "Show details (Inspect)" },
+				{ key = "K / CR", desc = "Show details (Inspect)" },
 				{ key = "Tab", desc = "Toggle collapse / expand" },
 			},
 		},
