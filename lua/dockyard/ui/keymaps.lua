@@ -78,6 +78,56 @@ function M.setup(table_start, comp)
 		end)
 	end
 
+	local function get_items_in_range(start_l, end_l)
+		local data_start = table_start + 3
+		local rows = comp.get_data()
+		local items = {}
+		for l = start_l, end_l do
+			local idx = l - data_start + 1
+			local item = rows[idx]
+			if item and not item._is_spacer then
+				table.insert(items, item)
+			end
+		end
+		return items
+	end
+
+	local function run_bulk_action(name, action_fn)
+		local mode = vim.api.nvim_get_mode().mode
+		local start_l, end_l
+		
+		if mode:match("[vV]") then
+			start_l = vim.fn.line("v")
+			end_l = vim.fn.line(".")
+			if start_l > end_l then start_l, end_l = end_l, start_l end
+			-- Exit visual mode
+			vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<Esc>", true, false, true), "n", true)
+		else
+			start_l = vim.api.nvim_win_get_cursor(0)[1]
+			end_l = start_l
+		end
+
+		local items = get_items_in_range(start_l, end_l)
+		if #items == 0 then return end
+
+		vim.notify("Dockyard: " .. name .. " " .. #items .. " items...", vim.log.levels.INFO)
+		
+		vim.schedule(function()
+			local success_count = 0
+			for _, item in ipairs(items) do
+				local ok = action_fn(item.id)
+				if ok then success_count = success_count + 1 end
+			end
+			
+			if success_count > 0 then
+				perform_refresh()
+			end
+			if success_count < #items then
+				vim.notify("Dockyard: Failed to " .. name .. " " .. (#items - success_count) .. " items", vim.log.levels.ERROR)
+			end
+		end)
+	end
+
 	-- Navigation & View switching
 	vim.keymap.set("n", "j", function() move_to_row(1) end, map_opts)
 	vim.keymap.set("n", "k", function() move_to_row(-1) end, map_opts)
@@ -118,19 +168,56 @@ function M.setup(table_start, comp)
 
 	-- Actions
 	if state.current_view == "containers" then
-		-- Logs on L (overrides next_view)
+		vim.keymap.set({ "n", "v" }, "s", function()
+			run_bulk_action("starting", function(id)
+				return require("dockyard.docker").container_action(id, "start")
+			end)
+		end, map_opts)
+
+		vim.keymap.set({ "n", "v" }, "x", function()
+			run_bulk_action("stopping", function(id)
+				return require("dockyard.docker").container_action(id, "stop")
+			end)
+		end, map_opts)
+
+		vim.keymap.set({ "n", "v" }, "r", function()
+			run_bulk_action("restarting", function(id)
+				return require("dockyard.docker").container_action(id, "restart")
+			end)
+		end, map_opts)
+
+		vim.keymap.set({ "n", "v" }, "d", function()
+			local items = {}
+			local mode = vim.api.nvim_get_mode().mode
+			if mode:match("[vV]") then
+				local start_l = vim.fn.line("v")
+				local end_l = vim.fn.line(".")
+				if start_l > end_l then start_l, end_l = end_l, start_l end
+				items = get_items_in_range(start_l, end_l)
+			else
+				local item = get_current_item()
+				if item and not item._is_spacer then table.insert(items, item) end
+			end
+
+			if #items == 0 then return end
+
+			local prompt = #items == 1 and ("Remove container " .. (items[1].name or items[1].id) .. "? (y/n): ")
+				or ("Remove " .. #items .. " containers? (y/n): ")
+
+			vim.ui.input({ prompt = prompt }, function(input)
+				if input and input:lower() == "y" then
+					run_bulk_action("removing", function(id)
+						return require("dockyard.docker").container_action(id, "rm")
+					end)
+				end
+			end)
+		end, map_opts)
+
+		-- Logs on L
 		vim.keymap.set("n", "L", function()
 			local item = get_current_item()
 			if not item or item._is_spacer then return end
-			vim.cmd("belowright split")
-			local log_win = vim.api.nvim_get_current_win()
-			local log_buf = vim.api.nvim_create_buf(false, true)
-			vim.api.nvim_win_set_buf(log_win, log_buf)
-			vim.api.nvim_buf_set_name(log_buf, "docker-logs-" .. item.name)
-			vim.api.nvim_buf_set_option(log_buf, "buftype", "nofile")
-			
-			vim.fn.termopen("docker logs -f --tail 100 " .. item.id)
-			vim.cmd("normal! G")
+			require("dockyard.ui.loglens").show_menu(item)
 		end, map_opts)
 
 		-- Debugging: Shell
