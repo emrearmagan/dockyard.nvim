@@ -5,7 +5,9 @@ A powerful and interactive Docker management tool for Neovim, designed for a fas
 > [!CAUTION]
 > **Still in early development, will have breaking changes!**
 
-![Overview](./examples/overview.gif)
+<div>
+  <img src="./examples/overview.gif" alt="overview.gif">
+</div>
 
 ## Features
 
