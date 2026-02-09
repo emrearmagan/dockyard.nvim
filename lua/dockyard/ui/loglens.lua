@@ -302,7 +302,22 @@ function M.open(item, log_cfg)
 		local dbuf = vim.api.nvim_create_buf(false, true)
 		local function render_popup()
 			local content
-			if show_raw then content = data.raw
+			if show_raw then 
+				-- Try to pretty-print if it's valid JSON
+				local ok, decoded = pcall(vim.json.decode, data.raw)
+				if ok and decoded then
+					-- Successfully parsed JSON, try to format with jq
+					local result = vim.fn.system("jq .", data.raw)
+					if vim.v.shell_error == 0 and result and result ~= "" then
+						content = result
+					else
+						-- jq failed or not available, use raw
+						content = data.raw
+					end
+				else
+					-- Not JSON or parse failed, use raw string
+					content = data.raw
+				end
 			else
 				if log_cfg.detail_parser then
 					local ok, res = pcall(log_cfg.detail_parser, data.raw)
