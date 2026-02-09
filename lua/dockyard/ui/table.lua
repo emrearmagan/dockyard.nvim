@@ -43,11 +43,12 @@ function M.render(ctx)
 	local config = ctx.config
 	local rows = ctx.rows
 	local width = ctx.width
+	local margin = ctx.margin or MARGIN
 	local lines = {}
 	local highlights = {}
 
 	local icon_width = config.has_icons and 2 or 0 
-	local column_widths = M.compute_widths(config.columns, width - (MARGIN * 2) - icon_width)
+	local column_widths = M.compute_widths(config.columns, width - (margin * 2) - icon_width)
 
 	-- Column Headers
 	local header_cells = {}
@@ -55,7 +56,7 @@ function M.render(ctx)
 		header_cells[#header_cells + 1] = M.truncate(col.label or col.key, column_widths[idx])
 	end
 	
-	local header_prefix = string.rep(" ", MARGIN + icon_width)
+	local header_prefix = string.rep(" ", margin + icon_width)
 	local header_row = header_prefix .. table.concat(header_cells, "  ")
 	lines[#lines + 1] = header_row
 	highlights[#highlights + 1] = { line = 0, col_start = 0, col_end = -1, group = "DockyardColumnHeader" }
@@ -63,7 +64,7 @@ function M.render(ctx)
 
 	-- Data Rows
 	if #rows == 0 then
-		lines[#lines + 1] = string.rep(" ", MARGIN) .. (config.empty_message or "No data")
+		lines[#lines + 1] = string.rep(" ", margin) .. (config.empty_message or "No data")
 	else
 		for _, row in ipairs(rows) do
 			if row._is_spacer then
@@ -71,8 +72,8 @@ function M.render(ctx)
 			else
 				local cells = {}
 				local cell_positions = {}
-				local row_prefix = string.rep(" ", MARGIN)
-				local current_byte_pos = MARGIN
+				local row_prefix = string.rep(" ", margin)
+				local current_byte_pos = margin
 
 				-- 1. Margin Icon
 				if config.has_icons and config.get_row_icon and not row._custom_icon_logic then
@@ -80,8 +81,8 @@ function M.render(ctx)
 					row_prefix = row_prefix .. icon .. " "
 					highlights[#highlights + 1] = {
 						line = #lines,
-						col_start = MARGIN,
-						col_end = MARGIN + #icon,
+						col_start = margin,
+						col_end = margin + #icon,
 						group = icon_hl or "Normal",
 					}
 					current_byte_pos = current_byte_pos + #icon + 1
