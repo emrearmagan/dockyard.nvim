@@ -23,10 +23,6 @@ local function ensure_commands()
 	vim.api.nvim_create_user_command("DockyardFull", function()
 		require("dockyard").open_full()
 	end, { desc = "Open Dockyard in a new tab" })
-
-	vim.api.nvim_create_user_command("DockyardRefresh", function()
-		require("dockyard").refresh()
-	end, { desc = "Refresh Dockyard cache" })
 end
 
 local function stop_timer()
