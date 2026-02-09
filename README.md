@@ -5,7 +5,9 @@ A powerful and interactive Docker management tool for Neovim, designed for a fas
 > [!CAUTION]
 > **Still in early development, will have breaking changes!**
 
-[![Overview](https://github.com/emrearmagan/dockyard.nvim/raw/main/examples/overview.mp4)](https://github.com/emrearmagan/dockyard.nvim/raw/main/examples/overview.mp4)
+<div>
+  <img src="./examples/overview.gif" alt="loading.gif">
+</div>
 
 ## Features
 
