@@ -67,9 +67,8 @@ function M.setup(table_start, comp)
 		
 		vim.notify("Dockyard: " .. name .. " " .. (item.name or item.repository or item.id) .. "...", vim.log.levels.INFO)
 		
-		local id = item.id
 		vim.schedule(function()
-			local ok = action_fn(id)
+			local ok = action_fn(item)
 			if ok then
 				perform_refresh()
 			else
@@ -110,19 +109,21 @@ function M.setup(table_start, comp)
 		local items = get_items_in_range(start_l, end_l)
 		if #items == 0 then return end
 
-		vim.notify("Dockyard: " .. name .. " " .. #items .. " items...", vim.log.levels.INFO)
+		if name then
+			vim.notify("Dockyard: " .. name .. " " .. #items .. " items...", vim.log.levels.INFO)
+		end
 		
 		vim.schedule(function()
 			local success_count = 0
 			for _, item in ipairs(items) do
-				local ok = action_fn(item.id)
+				local ok = action_fn(item)
 				if ok then success_count = success_count + 1 end
 			end
 			
 			if success_count > 0 then
 				perform_refresh()
 			end
-			if success_count < #items then
+			if success_count < #items and name then
 				vim.notify("Dockyard: Failed to " .. name .. " " .. (#items - success_count) .. " items", vim.log.levels.ERROR)
 			end
 		end)
@@ -169,20 +170,24 @@ function M.setup(table_start, comp)
 	-- Actions
 	if state.current_view == "containers" then
 		vim.keymap.set({ "n", "v" }, "s", function()
-			run_bulk_action("starting", function(id)
-				return require("dockyard.docker").container_action(id, "start")
+			run_bulk_action(nil, function(item)
+				local is_running = item.status and item.status:lower():find("up") == 1
+				local action = is_running and "stop" or "start"
+				local action_name = is_running and "stopping" or "starting"
+				vim.notify("Dockyard: " .. action_name .. " " .. (item.name or item.id) .. "...", vim.log.levels.INFO)
+				return require("dockyard.docker").container_action(item.id, action)
 			end)
 		end, map_opts)
 
 		vim.keymap.set({ "n", "v" }, "x", function()
-			run_bulk_action("stopping", function(id)
-				return require("dockyard.docker").container_action(id, "stop")
+			run_bulk_action("stopping", function(item)
+				return require("dockyard.docker").container_action(item.id, "stop")
 			end)
 		end, map_opts)
 
 		vim.keymap.set({ "n", "v" }, "r", function()
-			run_bulk_action("restarting", function(id)
-				return require("dockyard.docker").container_action(id, "restart")
+			run_bulk_action("restarting", function(item)
+				return require("dockyard.docker").container_action(item.id, "restart")
 			end)
 		end, map_opts)
 
@@ -206,8 +211,8 @@ function M.setup(table_start, comp)
 
 			vim.ui.input({ prompt = prompt }, function(input)
 				if input and input:lower() == "y" then
-					run_bulk_action("removing", function(id)
-						return require("dockyard.docker").container_action(id, "rm")
+					run_bulk_action("removing", function(item)
+						return require("dockyard.docker").container_action(item.id, "rm")
 					end)
 				end
 			end)
@@ -249,8 +254,8 @@ function M.setup(table_start, comp)
 			if not item or not item._is_image then return end
 			vim.ui.input({ prompt = "Remove image " .. item.repository .. ":" .. item.tag .. "? (y/n): " }, function(input)
 				if input and input:lower() == "y" then
-					run_action("Removing image", function(id)
-						return require("dockyard.docker").image_action(id, "rm")
+					run_action("Removing image", function(it)
+						return require("dockyard.docker").image_action(it.id, "rm")
 					end)
 				end
 			end)
@@ -291,8 +296,8 @@ function M.setup(table_start, comp)
 			if not item or not item._is_network then return end
 			vim.ui.input({ prompt = "Remove network " .. item.name .. "? (y/n): " }, function(input)
 				if input and input:lower() == "y" then
-					run_action("Removing network", function(id)
-						return require("dockyard.docker").network_action(id, "rm")
+					run_action("Removing network", function(it)
+						return require("dockyard.docker").network_action(it.id, "rm")
 					end)
 				end
 			end)
