@@ -82,6 +82,73 @@ function M.open(item, log_cfg)
 	local filter_pattern = nil
 	local stream_buffer = ""
 	local flush_timer = vim.loop.new_timer()
+	local render_queue = {}
+	local render_timer = vim.loop.new_timer()
+
+	local function flush_render_queue()
+		if #render_queue == 0 or not vim.api.nvim_buf_is_valid(buf) then return end
+		
+		vim.api.nvim_buf_set_option(buf, "modifiable", true)
+		local lines_to_add = {}
+		local highlights_to_add = {}
+		local current_line_count = vim.api.nvim_buf_line_count(buf)
+		local is_empty = current_line_count == 1 and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == ""
+		
+		local start_idx = is_empty and 0 or current_line_count
+		
+		for i, parsed in ipairs(render_queue) do
+			local display_line = raw_mode and parsed.raw or (type(parsed.row) == "function" and parsed.row() or parsed.row)
+			display_line = tostring(display_line):gsub("\n", " ")
+			
+			if not filter_pattern or display_line:lower():find(filter_pattern:lower(), 1, true) then
+				table.insert(lines_to_add, display_line)
+				local target_lnum = start_idx + #lines_to_add - 1
+				buffer_to_data[target_lnum] = parsed
+				if parsed.highlight and not raw_mode then
+					table.insert(highlights_to_add, { highlight = parsed.highlight, lnum = target_lnum })
+				end
+			end
+		end
+
+		if #lines_to_add > 0 then
+			if is_empty then
+				vim.api.nvim_buf_set_lines(buf, 0, 1, false, { lines_to_add[1] })
+				if #lines_to_add > 1 then
+					local rest = {}
+					for i=2,#lines_to_add do table.insert(rest, lines_to_add[i]) end
+					vim.api.nvim_buf_set_lines(buf, 1, 1, false, rest)
+				end
+			else
+				vim.api.nvim_buf_set_lines(buf, -1, -1, false, lines_to_add)
+			end
+
+			for _, h in ipairs(highlights_to_add) do
+				h.highlight(buf, h.lnum)
+			end
+		end
+
+		local max = config.options.loglens.max_lines or 2000
+		local new_line_count = vim.api.nvim_buf_line_count(buf)
+		if new_line_count > max then
+			local to_remove = new_line_count - max
+			vim.api.nvim_buf_set_lines(buf, 0, to_remove, false, {})
+			local new_b2d = {}
+			for k, v in pairs(buffer_to_data) do
+				if k >= to_remove then new_b2d[k-to_remove] = v end
+			end
+			buffer_to_data = new_b2d
+		end
+		
+		vim.api.nvim_buf_set_option(buf, "modifiable", false)
+
+		if follow and #lines_to_add > 0 then
+			is_auto_scrolling = true
+			pcall(vim.api.nvim_win_set_cursor, win, { vim.api.nvim_buf_line_count(buf), 0 })
+			is_auto_scrolling = false
+		end
+		
+		render_queue = {}
+	end
 
 	-- Robust JSON/Text extractor
 	local function extract_entries()
@@ -183,10 +250,11 @@ function M.open(item, log_cfg)
 				local ts = ""
 				if res.timestamp then
 					ts = tostring(res.timestamp):match("T(%d%d:%d%d:%d%d)") or tostring(res.timestamp):sub(1, 10)
-					ts = ts .. " "
+				else
+					ts = "        "
 				end
 				parsed = {
-					row = string.format("%s[%s] %s", ts, level, msg),
+					row = string.format(" %-10s │ %-7s │ %s", ts, level, msg),
 					raw = cleaned_text,
 					detail = cleaned_text
 				}
@@ -204,46 +272,8 @@ function M.open(item, log_cfg)
 		if #logs_data > max then table.remove(logs_data, 1) end
 
 		if skip_ui then return end
-
-		local display_line = raw_mode and parsed.raw or (type(parsed.row) == "function" and parsed.row() or parsed.row)
-		display_line = tostring(display_line):gsub("\n", " ")
 		
-		if filter_pattern and not display_line:lower():find(filter_pattern:lower(), 1, true) then
-			return
-		end
-
-		vim.api.nvim_buf_set_option(buf, "modifiable", true)
-		local line_count = vim.api.nvim_buf_line_count(buf)
-		local is_empty = line_count == 1 and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == ""
-		
-		if is_empty then
-			vim.api.nvim_buf_set_lines(buf, 0, 1, false, { display_line })
-		else
-			vim.api.nvim_buf_set_lines(buf, -1, -1, false, { display_line })
-		end
-		
-		local new_lnum = vim.api.nvim_buf_line_count(buf) - 1
-		buffer_to_data[new_lnum] = parsed
-
-		if parsed.highlight and not raw_mode then
-			parsed.highlight(buf, new_lnum)
-		end
-
-		if line_count > max then
-			vim.api.nvim_buf_set_lines(buf, 0, 1, false, {})
-			local new_b2d = {}
-			for k, v in pairs(buffer_to_data) do
-				if k > 0 then new_b2d[k-1] = v end
-			end
-			buffer_to_data = new_b2d
-		end
-		vim.api.nvim_buf_set_option(buf, "modifiable", false)
-
-		if follow then
-			is_auto_scrolling = true
-			pcall(vim.api.nvim_win_set_cursor, win, { vim.api.nvim_buf_line_count(buf), 0 })
-			is_auto_scrolling = false
-		end
+		table.insert(render_queue, parsed)
 	end
 
 	local function flush_remaining()
@@ -252,6 +282,7 @@ function M.open(item, log_cfg)
 			stream_buffer = ""
 			process_entry(entry)
 		end
+		flush_render_queue()
 	end
 
 	local function handle_incoming_chunk(chunk)
@@ -380,7 +411,14 @@ function M.open(item, log_cfg)
 		vim.notify("Dockyard: Global Raw Mode " .. (raw_mode and "ON" or "OFF"))
 	end, kopts)
 
-	vim.keymap.set("n", "f", function() follow = not follow; vim.notify("Dockyard: Follow " .. (follow and "ON" or "OFF")) end, kopts)
+	vim.keymap.set("n", "f", function()
+		follow = not follow
+		if follow and vim.api.nvim_buf_is_valid(buf) then
+			is_auto_scrolling = true
+			pcall(vim.api.nvim_win_set_cursor, win, { vim.api.nvim_buf_line_count(buf), 0 })
+			is_auto_scrolling = false
+		end
+	end, kopts)
 	vim.keymap.set("n", "/", function()
 		vim.ui.input({ prompt = "Filter logs: " }, function(input)
 			if input == nil then return end
@@ -388,7 +426,7 @@ function M.open(item, log_cfg)
 			redraw_all()
 		end)
 	end, kopts)
-	vim.keymap.set("n", "c", function() filter_pattern = nil; redraw_all(); vim.notify("Dockyard: Filter cleared") end, kopts)
+	vim.keymap.set("n", "c", function() filter_pattern = nil; redraw_all() end, kopts)
 	
 	vim.keymap.set("n", "r", function() open_detail(true) end, kopts)
 	vim.keymap.set("n", "o", function() open_detail(false) end, kopts)
@@ -419,6 +457,10 @@ function M.open(item, log_cfg)
 		and { "docker", "exec", container_id, "tail", "-n", "100", "-f", log_cfg.path }
 		or { "docker", "logs", "-f", "--tail", "100", container_id }
 
+	render_timer:start(100, 100, vim.schedule_wrap(function()
+		if not is_detaching then flush_render_queue() end
+	end))
+
 	local job_id = vim.fn.jobstart(cmd, {
 		on_stdout = function(_, data)
 			if data then 
@@ -434,6 +476,10 @@ function M.open(item, log_cfg)
 			if flush_timer then
 				flush_timer:stop()
 				if not flush_timer:is_closing() then flush_timer:close() end
+			end
+			if render_timer then
+				render_timer:stop()
+				if not render_timer:is_closing() then render_timer:close() end
 			end
 			flush_remaining() 
 			vim.fn.jobstop(job_id) 
