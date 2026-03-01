@@ -61,12 +61,6 @@ function M.setup(opts)
 
 	ensure_commands()
 
-	if M._opts.auto_refresh ~= false then
-		containers.refresh({ silent = true })
-		images.refresh({ silent = true })
-		networks.refresh({ silent = true })
-	end
-
 	-- Initialize current_view from order if containers not in order
 	local order = M._opts.display.view_order
 	if order and #order > 0 then
