@@ -192,13 +192,13 @@ M.render(buf_id, columns, rows, start_line)
 ## Development Phases
 
 ### Phase 0: Lua Fundamentals & First Plugin
-- [ ] Clear folder and create structure
-- [ ] **LEARN**: Variables, types (string, number, boolean, nil)
-- [ ] Create `plugin/dockyard.lua` with `vim.notify("Hello!")`
-- [ ] **LEARN**: Tables (arrays and dictionaries)
-- [ ] **LEARN**: Functions, local scope, return values
-- [ ] **LEARN**: Control flow (if/else, for loops with pairs/ipairs)
-- [ ] **LEARN**: Modules, require(), M = {} pattern
+- [x] Clear folder and create structure
+- [x] **LEARN**: Variables, types (string, number, boolean, nil)
+- [x] Create `plugin/dockyard.lua` with `vim.notify("Hello!")`
+- [x] **LEARN**: Tables (arrays and dictionaries)
+- [x] **LEARN**: Functions, local scope, return values
+- [x] **LEARN**: Control flow (if/else, for loops with pairs/ipairs)
+- [x] **LEARN**: Modules, require(), M = {} pattern
 
 ### Phase 1: Config & Setup Pattern
 - [ ] Create `config.lua` with defaults
