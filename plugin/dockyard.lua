@@ -1,6 +1,6 @@
 if vim.g.loaded_dockyard then
-  return
+	return
 end
 vim.g.loaded_dockyard = true
 
-require("dockyard").setup()
+vim.notify("Loading Dockyard plugin...")
