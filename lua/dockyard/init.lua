@@ -1,11 +1,21 @@
 local M = {}
 
 function M.setup(opts)
-	vim.notify("Dockyard setup is not implemented yet")
 	local config = require("dockyard.config")
 	config.setup(opts)
 
-	vim.notify("Dockyard setup is complete" .. config.options.loglens.max_lines)
+	local docker = require("dockyard.docker")
+	docker.list_networks(function(result)
+		if result.ok then
+			print(vim.inspect(result.data))
+		else
+			vim.notify("Error listing containers:\n" .. result.error, vim.log.levels.ERROR)
+		end
+	end)
+end
+
+function M.open()
+	vim.notify("Opening Dockyard UI (not yet implemented)")
 end
 
 return M
