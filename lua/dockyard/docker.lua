@@ -1,4 +1,5 @@
 local M = {}
+
 local job = require("plenary.job")
 
 local function run_docker_command(args, callback)
@@ -30,6 +31,7 @@ end
 --- @field networks string
 --- @field created string
 --- @field created_since string
+
 --- @alias ContainerCallback fun(result: {ok: boolean, data: Container[], error?: string})
 function M.list_containers(callback)
 	local format = table.concat({
@@ -75,8 +77,7 @@ end
 --- @field created_since string
 --- @field size string
 
---- @alias ImageCallback fun(result: {ok: boolean, data: Image[], error?: string})
-
+--- @param callback fun(result: {ok: boolean, data: Image[], error?: string})
 M.list_images = function(callback)
 	local format = table.concat({
 		"{",
@@ -117,8 +118,7 @@ end
 --- @field scope string
 --- @field created string
 
---- @alias NetworkCallback fun(result: {ok: boolean, data: Network[], error?: string})
-
+--- @param callback fun(result: {ok: boolean, data: Network[], error?: string})
 M.list_networks = function(callback)
 	local format = table.concat({
 		"{",
@@ -148,6 +148,38 @@ M.list_networks = function(callback)
 		end
 
 		callback({ ok = true, data = networks })
+	end)
+end
+
+--- @param container_id string
+--- @param action "start"|"stop"|"restart"|"rm"
+--- @param callback fun(result: {ok: boolean, error?: string})
+M.container_action = function(container_id, action, callback)
+	run_docker_command({ action, container_id }, function(result)
+		if result.ok then
+			callback({ ok = true })
+		else
+			callback({ ok = false, error = result.error })
+		end
+	end)
+end
+
+--- @param type "container"|"image"|"network"
+--- @param id string
+--- @param callback fun(result: {ok: boolean, data?: table, error?: string})
+M.inspect = function(type, id, callback)
+	run_docker_command({ "inspect", "--type", type, id }, function(result)
+		if not result.ok then
+			callback(result)
+			return
+		end
+
+		local ok, parsed = pcall(vim.json.decode, result.data)
+		if ok and parsed and #parsed > 0 then
+			callback({ ok = true, data = parsed[1] })
+		else
+			callback({ ok = false, error = "Failed to parse inspect data" })
+		end
 	end)
 end
 
