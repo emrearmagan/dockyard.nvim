@@ -1,21 +1,30 @@
 local M = {}
 
+local function setup_keymaps()
+	vim.api.nvim_create_user_command("Dockyard", function()
+		local ui = require("dockyard.ui")
+		if ui.is_open() then
+			ui.close()
+		else
+			ui.open()
+		end
+	end, { desc = "Toggle Dockyard UI" })
+
+	vim.api.nvim_create_user_command("DockyardFull", function()
+		local ui = require("dockyard.ui")
+		if ui.is_open() then
+			ui.close()
+		else
+			ui.open_full()
+		end
+	end, { desc = "Toggle Dockyard Fullscreen" })
+end
+
 function M.setup(opts)
 	local config = require("dockyard.config")
 	config.setup(opts)
 
-	local docker = require("dockyard.docker")
-	docker.list_networks(function(result)
-		if result.ok then
-			print(vim.inspect(result.data))
-		else
-			vim.notify("Error listing containers:\n" .. result.error, vim.log.levels.ERROR)
-		end
-	end)
-end
-
-function M.open()
-	vim.notify("Opening Dockyard UI (not yet implemented)")
+	setup_keymaps()
 end
 
 return M
