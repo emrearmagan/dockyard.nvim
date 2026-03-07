@@ -34,6 +34,10 @@ M.options = {
 }
 
 local function setup_keymaps()
+	-- Ensure we replace any stale command handlers from previous reloads.
+	pcall(vim.api.nvim_del_user_command, "Dockyard")
+	pcall(vim.api.nvim_del_user_command, "DockyardFull")
+
 	vim.api.nvim_create_user_command("Dockyard", function()
 		local ui = require("dockyard.ui")
 		if ui.is_open() then
