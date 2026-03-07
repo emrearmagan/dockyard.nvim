@@ -2,6 +2,8 @@ local M = {}
 local state = require("dockyard.ui.state")
 local renderer = require("dockyard.ui.renderer")
 
+local win_config_by_mode = {}
+
 local function panel_win_config()
 	local total_w = vim.o.columns
 	local total_h = vim.o.lines
@@ -36,6 +38,9 @@ local function full_win_config()
 	}
 end
 
+win_config_by_mode.panel = panel_win_config
+win_config_by_mode.full = full_win_config
+
 local function create_buf()
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_name(buf, "Dockyard")
@@ -47,12 +52,26 @@ local function create_buf()
 	return buf
 end
 
-local function apply_win_config(win)
+local function apply_win_config(win, mode)
 	vim.api.nvim_win_set_option(win, "number", false)
 	vim.api.nvim_win_set_option(win, "relativenumber", false)
 	vim.api.nvim_win_set_option(win, "signcolumn", "no")
 	vim.api.nvim_win_set_option(win, "wrap", false)
 	vim.api.nvim_win_set_option(win, "cursorline", true)
+
+	if mode == "full" then
+		vim.api.nvim_win_set_option(
+			win,
+			"winhighlight",
+			"Normal:Normal,NormalFloat:Normal,FloatBorder:FloatBorder,CursorLine:CursorLine"
+		)
+	else
+		vim.api.nvim_win_set_option(
+			win,
+			"winhighlight",
+			"Normal:NormalFloat,NormalFloat:NormalFloat,FloatBorder:FloatBorder,CursorLine:CursorLine"
+		)
+	end
 end
 
 local function open_with(mode, win_config_fn)
@@ -70,10 +89,20 @@ local function open_with(mode, win_config_fn)
 	end
 
 	state.win_id = vim.api.nvim_open_win(state.buf_id, true, win_config_fn())
-	apply_win_config(state.win_id)
+	apply_win_config(state.win_id, mode)
 	renderer.render()
 
 	return state.win_id
+end
+
+M.resize = function()
+	if not M.is_open() then
+		return
+	end
+
+	local config_fn = win_config_by_mode[state.mode] or panel_win_config
+	vim.api.nvim_win_set_config(state.win_id, config_fn())
+	renderer.render()
 end
 
 M.is_open = function()
@@ -108,5 +137,13 @@ M.refresh = function()
 		renderer.render()
 	end
 end
+
+local resize_group = vim.api.nvim_create_augroup("DockyardUIResize", { clear = true })
+vim.api.nvim_create_autocmd("VimResized", {
+	group = resize_group,
+	callback = function()
+		M.resize()
+	end,
+})
 
 return M

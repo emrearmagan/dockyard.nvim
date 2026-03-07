@@ -1,27 +1,41 @@
 local M = {}
 
 local palette = {
-	running = "#a6e3a1",
-	stopped = "#f38ba8",
-	paused = "#f9e2af",
-	restarting = "#89b4fa",
-	dead = "#585b70",
+	bg_soft = "#2b2f3a",
+	fg = "#d9e0ee",
+	muted = "#7f849c",
+
+	blue = "#89b4fa",
+	green = "#a6e3a1",
+	yellow = "#f9e2af",
+	red = "#f38ba8",
+	orange = "#fab387",
+
+	tab_inactive_bg = "#3a3f4b",
+	tab_inactive_fg = "#aab1c3",
 }
 
 ---@type table<string, table>
 local groups = {
-	DockyardRunning = { fg = palette.running, bold = true },
-	DockyardStopped = { fg = palette.stopped, bold = true },
-	DockyardPaused = { fg = palette.paused, bold = true },
-	DockyardRestarting = { fg = palette.restarting, bold = true },
-	DockyardDead = { fg = palette.dead, bold = true },
+	DockyardRunning = { fg = palette.green, bold = true },
+	DockyardStopped = { fg = palette.red, bold = true },
+	DockyardPaused = { fg = palette.yellow, bold = true },
+	DockyardRestarting = { fg = palette.blue, bold = true },
+	DockyardDead = { fg = palette.muted, bold = true },
 
-	DockyardTitle = { link = "Title" },
-	DockyardHeader = { link = "Label" },
-	DockyardNavActive = { link = "TabLineSel" },
-	DockyardNavInactive = { link = "TabLine" },
+	DockyardHeader = { bg = palette.bg_soft, fg = palette.blue, bold = true },
+	DockyardTitle = { fg = palette.blue, bold = true },
+	DockyardTabActive = { bg = palette.blue, fg = "#1e1e2e", bold = true },
+	DockyardTabInactive = { bg = palette.tab_inactive_bg, fg = palette.tab_inactive_fg },
+	DockyardAction = { fg = palette.fg },
+	DockyardActionRefresh = { bg = palette.green, fg = "#1e1e2e", bold = true },
+	DockyardActionHelp = { bg = palette.orange, fg = "#1e1e2e", bold = true },
+
+	-- compatibility aliases (older names used in newer docs)
+	DockyardNavActive = { link = "DockyardTabActive" },
+	DockyardNavInactive = { link = "DockyardTabInactive" },
 	DockyardBorder = { link = "FloatBorder" },
-	DockyardDim = { link = "Comment" },
+	DockyardDim = { fg = palette.muted },
 	DockyardNormal = { link = "Normal" },
 }
 
