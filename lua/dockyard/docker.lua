@@ -7,16 +7,18 @@ local function run_docker_command(args, callback)
 		command = "docker",
 		args = args,
 		on_exit = function(j, return_val)
-			if return_val == 0 then
-				local result = table.concat(j:result(), "\n")
-				callback({ ok = true, data = result })
-			else
-				local stderr = table.concat(j:stderr_result(), "\n")
-				callback({
-					ok = false,
-					error = stderr ~= "" and stderr or "Docker command failed",
-				})
-			end
+			vim.schedule(function()
+				if return_val == 0 then
+					local result = table.concat(j:result(), "\n")
+					callback({ ok = true, data = result })
+				else
+					local stderr = table.concat(j:stderr_result(), "\n")
+					callback({
+						ok = false,
+						error = stderr ~= "" and stderr or "Docker command failed",
+					})
+				end
+			end)
 		end,
 	}):start()
 end
