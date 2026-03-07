@@ -21,7 +21,8 @@ local function panel_win_config()
 		col = col,
 		style = "minimal",
 		border = "rounded",
-		zindex = 100,
+		zindex = 250,
+		noautocmd = true,
 	}
 end
 
@@ -34,7 +35,8 @@ local function full_win_config()
 		col = 0,
 		style = "minimal",
 		border = "none",
-		zindex = 100,
+		zindex = 250,
+		noautocmd = true,
 	}
 end
 
@@ -46,7 +48,7 @@ local function create_buf()
 	vim.api.nvim_buf_set_name(buf, "Dockyard")
 	vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
 	vim.api.nvim_buf_set_option(buf, "swapfile", false)
-	vim.api.nvim_buf_set_option(buf, "bufhidden", "wipe")
+	vim.api.nvim_buf_set_option(buf, "bufhidden", "hide")
 	vim.api.nvim_buf_set_option(buf, "filetype", "dockyard")
 	vim.api.nvim_buf_set_option(buf, "modifiable", false)
 	return buf
@@ -58,6 +60,7 @@ local function apply_win_config(win, mode)
 	vim.api.nvim_win_set_option(win, "signcolumn", "no")
 	vim.api.nvim_win_set_option(win, "wrap", false)
 	vim.api.nvim_win_set_option(win, "cursorline", true)
+	vim.api.nvim_win_set_option(win, "winblend", 0)
 
 	if mode == "full" then
 		vim.api.nvim_win_set_option(
