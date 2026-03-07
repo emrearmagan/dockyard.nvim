@@ -11,27 +11,31 @@ local function create_state(fetch_fn)
 
 	local S = {}
 
+	---@param opts? { silent?: boolean, on_success?: fun(items: table[]), on_error?: fun(err: string) }
 	function S.refresh(opts)
-		fetch_fn(opts, function(result)
-			if not result.ok then
-				state.items = {}
-				state.last_error = result.error
-				state.last_updated = os.time()
+		opts = opts or {}
 
-				if not opts.silent then
-					vim.notify(string.format("Dockyard: %s", result.error), vim.log.levels.ERROR)
-				end
-
-				if opts.on_error then
-					opts.on_error(result.error)
-				end
-
+		fetch_fn(function(result)
+			if result.ok then
 				state.items = result.data or {}
 				state.last_error = nil
 				state.last_updated = os.time()
 				if opts.on_success then
-					opts.on_success(result.data)
+					opts.on_success(state.items)
 				end
+				return
+			end
+
+			state.items = {}
+			state.last_error = result.error
+			state.last_updated = os.time()
+
+			if not opts.silent then
+				vim.notify(string.format("Dockyard: %s", tostring(result.error)), vim.log.levels.ERROR)
+			end
+
+			if opts.on_error then
+				opts.on_error(tostring(result.error))
 			end
 		end)
 	end
@@ -51,6 +55,10 @@ local function create_state(fetch_fn)
 
 	S.last_updated = function()
 		return state.last_updated
+	end
+
+	function S.get_items()
+		return state.items
 	end
 
 	return S
