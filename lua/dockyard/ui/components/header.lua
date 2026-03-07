@@ -1,19 +1,30 @@
 local M = {}
 
+local function center_text(text, width)
+	local content_width = vim.fn.strdisplaywidth(text)
+	if content_width >= width then
+		return text, 0
+	end
+
+	local left_pad = math.floor((width - content_width) / 2)
+	return string.rep(" ", left_pad) .. text, left_pad
+end
+
 ---@param mode "panel"|"full"
 ---@param width number
 ---@return { lines: string[], highlights: table[] }
 function M.render(mode, width)
-	local label = string.upper(mode or "panel")
-	local title = string.format(" Dockyard [%s] ", label)
-	local seperator = string.rep("=", math.max(width - 2, 20))
+	local inner = math.max(width - 2, 20)
+	local title = "    Docker  "
+	local line, start_col = center_text(title, inner)
 
 	return {
-		lines = { title, seperator },
+		lines = {
+			line,
+			"",
+		},
 		highlights = {
-			{ line = 0, start_col = 0, end_col = #title, hl_group = "DockyardHeader" },
-			{ line = 0, start_col = 1, end_col = 9, hl_group = "DockyardTitle" },
-			{ line = 1, start_col = 0, end_col = #seperator, hl_group = "DockyardDim" },
+			{ line = 0, start_col = start_col, end_col = start_col + #title, hl_group = "DockyardHeader" },
 		},
 	}
 end

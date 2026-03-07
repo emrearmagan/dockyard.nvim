@@ -56,10 +56,13 @@ function M.render()
 	local width = current_width()
 
 	append_block(lines, spans, header.render(state.mode, width))
-	table.insert(lines, "")
 
 	local views = config.options.display.views or { "containers", "images", "networks" }
-	append_block(lines, spans, navbar.render(state.current_view, views))
+	append_block(lines, spans, navbar.render({
+		width = width,
+		current_view = state.current_view,
+		views = views,
+	}))
 	table.insert(lines, "")
 
 	local body_line = string.format("View: %s (Phase 6 placeholder)", state.current_view)
