@@ -1,5 +1,6 @@
 local M = {}
 local state = require("dockyard.ui.state")
+local renderer = require("dockyard.ui.renderer")
 
 local function panel_win_config()
 	local total_w = vim.o.columns
@@ -36,7 +37,6 @@ local function full_win_config()
 end
 
 local function create_buf()
-  vim.api.wrap
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_name(buf, "Dockyard")
 	vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
@@ -58,7 +58,8 @@ end
 local function open_with(mode, win_config_fn)
 	if M.is_open() then
 		vim.api.nvim_set_current_win(state.win_id)
-		return
+		renderer.render()
+		return state.win_id
 	end
 
 	state.prev_win = vim.api.nvim_get_current_win()
@@ -70,11 +71,10 @@ local function open_with(mode, win_config_fn)
 
 	state.win_id = vim.api.nvim_open_win(state.buf_id, true, win_config_fn())
 	apply_win_config(state.win_id)
+	renderer.render()
 
 	return state.win_id
 end
-
--- Public API
 
 M.is_open = function()
 	return state.win_id ~= nil and vim.api.nvim_win_is_valid(state.win_id)
@@ -101,6 +101,12 @@ M.close = function()
 	end
 
 	state.prev_win = nil
+end
+
+M.refresh = function()
+	if M.is_open() then
+		renderer.render()
+	end
 end
 
 return M

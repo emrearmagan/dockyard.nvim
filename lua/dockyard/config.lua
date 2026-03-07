@@ -33,9 +33,30 @@ M.options = {
 	},
 }
 
+local function setup_keymaps()
+	vim.api.nvim_create_user_command("Dockyard", function()
+		local ui = require("dockyard.ui")
+		if ui.is_open() then
+			ui.close()
+		else
+			ui.open()
+		end
+	end, { desc = "Toggle Dockyard UI" })
+
+	vim.api.nvim_create_user_command("DockyardFull", function()
+		local ui = require("dockyard.ui")
+		if ui.is_open() then
+			ui.close()
+		else
+			ui.open_full()
+		end
+	end, { desc = "Toggle Dockyard Fullscreen" })
+end
+
 ---@param opts? DockyardConfig
 function M.setup(opts)
 	M.options = vim.tbl_deep_extend("force", M.options, opts or {})
+	setup_keymaps()
 end
 
 return M
