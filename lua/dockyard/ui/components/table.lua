@@ -157,7 +157,7 @@ end
 ---@param rows table[]
 ---@param available_width number content area width (excluding left margin)
 ---@param gap_after fun(index:number):number
-local function compute_widths(columns, rows, available_width, gap_after, tree)
+local function compute_widths(columns, rows, available_width, gap_after, tree, fill)
 	local widths = {}
 	for i, c in ipairs(columns) do
 		widths[i] = natural_width(c, rows, i, tree)
@@ -194,31 +194,33 @@ local function compute_widths(columns, rows, available_width, gap_after, tree)
 	end
 
 	-- Fill remaining room by growing the smallest eligible column each step.
-	while total_used() < available_width do
-		local smallest_idx = nil
-		local smallest_width = math.huge
+	if fill ~= false then
+		while total_used() < available_width do
+			local smallest_idx = nil
+			local smallest_width = math.huge
 
-		for i, col in ipairs(columns) do
-			if not col.width then
-				local is_last = (i == #columns)
-				local allow_grow_last = col.grow_last == true
-				local capped_by_last = is_last and (not allow_grow_last) and widths[i] >= desired[i]
-				local capped_by_max = col.max_width ~= nil and widths[i] >= col.max_width
+			for i, col in ipairs(columns) do
+				if not col.width then
+					local is_last = (i == #columns)
+					local allow_grow_last = col.grow_last == true
+					local capped_by_last = is_last and (not allow_grow_last) and widths[i] >= desired[i]
+					local capped_by_max = col.max_width ~= nil and widths[i] >= col.max_width
 
-				if not capped_by_last and not capped_by_max then
-					if widths[i] < smallest_width then
-						smallest_idx = i
-						smallest_width = widths[i]
+					if not capped_by_last and not capped_by_max then
+						if widths[i] < smallest_width then
+							smallest_idx = i
+							smallest_width = widths[i]
+						end
 					end
 				end
 			end
-		end
 
-		if smallest_idx == nil then
-			break
-		end
+			if smallest_idx == nil then
+				break
+			end
 
-		widths[smallest_idx] = widths[smallest_idx] + 1
+			widths[smallest_idx] = widths[smallest_idx] + 1
+		end
 	end
 
 	for i, c in ipairs(columns) do
@@ -235,6 +237,7 @@ function M.render(opts)
 	local right_margin = opts.right_margin or margin
 	local cell_hl = opts.cell_hl
 	local default_gap = opts.column_gap or 2
+	local fill = opts.fill ~= false
 
 	local function gap_after(index)
 		local c = columns[index]
@@ -260,7 +263,7 @@ function M.render(opts)
 	end
 
 	-- Keep both left and right padding so table aligns with navbar framing.
-	compute_widths(columns, rows, math.max(width - margin - right_margin, 1), gap_after, tree)
+	compute_widths(columns, rows, math.max(width - margin - right_margin, 1), gap_after, tree, fill)
 
 	local lines = {}
 	local line_map = {}

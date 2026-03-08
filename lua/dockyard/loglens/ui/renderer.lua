@@ -54,6 +54,7 @@ function M.render(state)
 		rows = state.entries,
 		width = width,
 		margin = 1,
+		fill = false,
 	})
 
 	vim.api.nvim_set_option_value("modifiable", true, { buf = state.buf_id })
