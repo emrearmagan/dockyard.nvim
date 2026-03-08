@@ -1,18 +1,20 @@
 local M = {}
 
 local palette = {
-	bg_soft = "#2b2f3a",
-	fg = "#d9e0ee",
-	muted = "#7f849c",
+	bg_soft = "#363a4f",
+	fg = "#cad3f5",
+	muted = "#8087a2",
 
-	blue = "#89b4fa",
-	green = "#a6e3a1",
-	yellow = "#f9e2af",
-	red = "#f38ba8",
-	orange = "#fab387",
+	blue = "#8aadf4",
+	green = "#a6da95",
+	yellow = "#eed49f",
+	red = "#ed8796",
+	orange = "#f5a97f",
+	mauve = "#c6a0f6",
 
-	tab_inactive_bg = "#3a3f4b",
-	tab_inactive_fg = "#aab1c3",
+	tab_inactive_bg = "#494d64",
+	tab_inactive_fg = "#a5adcb",
+	column_header = "#939ab7",
 }
 
 ---@type table<string, table>
@@ -30,6 +32,11 @@ local groups = {
 	DockyardAction = { fg = palette.fg },
 	DockyardActionRefresh = { bg = palette.green, fg = "#1e1e2e", bold = true },
 	DockyardActionHelp = { bg = palette.orange, fg = "#1e1e2e", bold = true },
+	DockyardColumnHeader = { fg = palette.column_header, bold = true },
+	DockyardName = { fg = palette.blue },
+	DockyardImage = { fg = palette.mauve },
+	DockyardPorts = { fg = palette.orange },
+	DockyardMuted = { fg = palette.muted },
 
 	-- compatibility aliases (older names used in newer docs)
 	DockyardNavActive = { link = "DockyardTabActive" },

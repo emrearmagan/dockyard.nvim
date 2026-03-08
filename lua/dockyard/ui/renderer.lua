@@ -58,14 +58,18 @@ function M.render()
 	append_block(lines, spans, header.render(state.mode, width))
 
 	local views = config.options.display.views or { "containers", "images", "networks" }
-	append_block(lines, spans, navbar.render({
-		width = width,
-		current_view = state.current_view,
-		views = views,
-	}))
+	append_block(
+		lines,
+		spans,
+		navbar.render({
+			width = width,
+			current_view = state.current_view,
+			views = views,
+		})
+	)
 	table.insert(lines, "")
 
-	local body_line = string.format("View: %s (Phase 6 placeholder)", state.current_view)
+	local body_line = string.format("View: %s (table disabled)", state.current_view)
 	table.insert(lines, body_line)
 	table.insert(spans, {
 		line = #lines - 1,
@@ -73,6 +77,7 @@ function M.render()
 		end_col = #body_line,
 		hl_group = "DockyardDim",
 	})
+	state.line_map = {}
 
 	local was_modifiable = vim.api.nvim_buf_get_option(buf, "modifiable")
 	if not was_modifiable then
@@ -85,8 +90,6 @@ function M.render()
 	if not was_modifiable then
 		vim.api.nvim_buf_set_option(buf, "modifiable", false)
 	end
-
-	state.line_map = {}
 end
 
 return M
