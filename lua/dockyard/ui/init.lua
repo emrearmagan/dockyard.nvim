@@ -2,6 +2,7 @@ local M = {}
 local state = require("dockyard.ui.state")
 local data_state = require("dockyard.state")
 local renderer = require("dockyard.ui.renderer")
+local config = require("dockyard.config")
 
 local win_config_by_mode = {}
 
@@ -92,6 +93,7 @@ local function open_with(mode, win_config_fn)
 	state.win_id = vim.api.nvim_open_win(state.buf_id, true, win_config_fn())
 	apply_win_config(state.win_id, mode)
 	renderer.render()
+	require("dockyard.ui.keymaps").attach(state.buf_id)
 
 	data_state.containers.refresh({
 		silent = true,
@@ -108,6 +110,45 @@ local function open_with(mode, win_config_fn)
 	})
 
 	return state.win_id
+end
+
+local function refresh_current_view_data(on_done)
+	local refreshers = {
+		containers = data_state.containers,
+		images = data_state.images,
+		networks = data_state.networks,
+	}
+
+	local target = refreshers[state.current_view]
+	if target == nil then
+		on_done()
+		return
+	end
+
+	target.refresh({
+		silent = true,
+		on_success = on_done,
+		on_error = on_done,
+	})
+end
+
+local function cycle_view(step)
+	local views = config.options.display.views or { "containers", "images", "networks" }
+	if #views == 0 then
+		return
+	end
+
+	local idx = 1
+	for i, view in ipairs(views) do
+		if view == state.current_view then
+			idx = i
+			break
+		end
+	end
+
+	local next_idx = ((idx - 1 + step) % #views) + 1
+	state.current_view = views[next_idx]
+	M.refresh()
 end
 
 M.resize = function()
@@ -148,9 +189,23 @@ M.close = function()
 end
 
 M.refresh = function()
-	if M.is_open() then
-		renderer.render()
+	if not M.is_open() then
+		return
 	end
+
+	refresh_current_view_data(function()
+		if M.is_open() then
+			renderer.render()
+		end
+	end)
+end
+
+M.next_view = function()
+	cycle_view(1)
+end
+
+M.prev_view = function()
+	cycle_view(-1)
 end
 
 local resize_group = vim.api.nvim_create_augroup("DockyardUIResize", { clear = true })
