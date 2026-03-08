@@ -30,7 +30,10 @@ local function build_rows(items)
 			ports = c.ports or "-",
 			created = c.created_since or "-",
 			_status = st,
-			_item = c,
+			_item = {
+				kind = "container",
+				item = c,
+			},
 		})
 	end
 	return rows

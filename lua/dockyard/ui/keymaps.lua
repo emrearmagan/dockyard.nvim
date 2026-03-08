@@ -23,10 +23,6 @@ local function open_details_at_cursor()
 		require("dockyard.ui.popups.network").open(node)
 		return
 	end
-
-	if ui_state.current_view == "containers" and node.id then
-		require("dockyard.ui.popups.container").open(node)
-	end
 end
 
 function M.get_item_at_cursor()
@@ -97,23 +93,28 @@ function M.register_view(buf, view)
 	-- Containers
 	if view == "containers" then
 		vim.keymap.set("n", "s", function()
-			container_actions.toggle_start_stop(M.get_item_at_cursor(), on_container_action_done, vim.notify)
+			local node = M.get_item_at_cursor()
+			container_actions.toggle_start_stop(node and node.item or nil, on_container_action_done, vim.notify)
 		end, opts)
 
 		vim.keymap.set("n", "x", function()
-			container_actions.stop(M.get_item_at_cursor(), on_container_action_done, vim.notify)
+			local node = M.get_item_at_cursor()
+			container_actions.stop(node and node.item or nil, on_container_action_done, vim.notify)
 		end, opts)
 
 		vim.keymap.set("n", "r", function()
-			container_actions.restart(M.get_item_at_cursor(), on_container_action_done, vim.notify)
+			local node = M.get_item_at_cursor()
+			container_actions.restart(node and node.item or nil, on_container_action_done, vim.notify)
 		end, opts)
 
 		vim.keymap.set("n", "d", function()
-			container_actions.remove(M.get_item_at_cursor(), on_container_action_done, vim.notify)
+			local node = M.get_item_at_cursor()
+			container_actions.remove(node and node.item or nil, on_container_action_done, vim.notify)
 		end, opts)
 
 		vim.keymap.set("n", "T", function()
-			local item = M.get_item_at_cursor()
+			local node = M.get_item_at_cursor()
+			local item = node and node.item or nil
 			if item then
 				require("dockyard.ui.views.terminal").open(item.id, "sh", {
 					mode = ui_state.mode,
