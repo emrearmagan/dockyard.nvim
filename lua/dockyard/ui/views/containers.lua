@@ -1,25 +1,9 @@
 local M = {}
 
+local docker = require("dockyard.docker")
 local state = require("dockyard.state")
 local table_view = require("dockyard.ui.components.table")
 local highlights = require("dockyard.ui.highlights")
-
-local function to_status(raw)
-	raw = tostring(raw or ""):lower()
-	if raw:find("up", 1, true) then
-		return "running"
-	end
-	if raw:find("paused", 1, true) then
-		return "paused"
-	end
-	if raw:find("restarting", 1, true) then
-		return "restarting"
-	end
-	if raw:find("dead", 1, true) then
-		return "dead"
-	end
-	return "stopped"
-end
 
 local function status_icon(status)
 	if status == "running" then
@@ -37,7 +21,7 @@ end
 local function build_rows(items)
 	local rows = {}
 	for _, c in ipairs(items) do
-		local st = to_status(c.status)
+		local st = docker.to_status(c.status)
 		table.insert(rows, {
 			icon = status_icon(st),
 			name = c.name or "-",
