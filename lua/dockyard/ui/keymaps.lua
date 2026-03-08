@@ -128,7 +128,7 @@ function M.register_view(buf, view)
 		end, opts)
 
 		vim.keymap.set("n", "P", function()
-			images_actions.prune(M._handlers.refresh)
+			images_actions.prune(M._handlers.refresh, vim.notify)
 		end, opts)
 
 		vim.keymap.set("n", "L", function()
@@ -136,6 +136,32 @@ function M.register_view(buf, view)
 			if node then
 				image_popup.open(node)
 			end
+		end, opts)
+
+	-- Networks
+	elseif view == "networks" then
+		local networks_view = require("dockyard.ui.views.networks")
+		local networks_actions = require("dockyard.ui.actions.networks")
+
+		vim.keymap.set("n", "<CR>", function()
+			local node = M.get_item_at_cursor()
+			if node then
+				networks_view.toggle(node)
+				M._handlers.refresh()
+			end
+		end, opts)
+
+		vim.keymap.set("n", "o", function()
+			local node = M.get_item_at_cursor()
+			if node then
+				networks_view.toggle(node)
+				M._handlers.refresh()
+			end
+		end, opts)
+
+		vim.keymap.set("n", "d", function()
+			local node = M.get_item_at_cursor()
+			networks_actions.remove(node, M._handlers.refresh, vim.notify)
 		end, opts)
 	end
 end
@@ -155,6 +181,10 @@ function M.unregister_view(buf, view)
 		pcall(vim.keymap.del, "n", "d", { buffer = buf })
 		pcall(vim.keymap.del, "n", "P", { buffer = buf })
 		pcall(vim.keymap.del, "n", "L", { buffer = buf })
+	elseif view == "networks" then
+		pcall(vim.keymap.del, "n", "<CR>", { buffer = buf })
+		pcall(vim.keymap.del, "n", "o", { buffer = buf })
+		pcall(vim.keymap.del, "n", "d", { buffer = buf })
 	end
 end
 

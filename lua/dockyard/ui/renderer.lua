@@ -7,6 +7,7 @@ local header = require("dockyard.ui.components.header")
 local navbar = require("dockyard.ui.components.navbar")
 local containers_view = require("dockyard.ui.views.containers")
 local images_view = require("dockyard.ui.views.images")
+local networks_view = require("dockyard.ui.views.networks")
 
 local ns = vim.api.nvim_create_namespace("dockyard.ui")
 
@@ -115,8 +116,22 @@ function M.render()
 				{ line = 0, start_col = 0, end_col = #msg, hl_group = "DockyardStopped" },
 			}
 		end
+	elseif state.current_view == "networks" then
+		local ok
+		ok, body_lines, body_line_map, body_spans = pcall(networks_view.render, width)
+		if not ok then
+			local msg = "Dockyard render error: " .. tostring(body_lines)
+			vim.notify(msg, vim.log.levels.ERROR)
+			body_lines = { msg }
+			body_line_map = {}
+			body_spans = {
+				{ line = 0, start_col = 0, end_col = #msg, hl_group = "DockyardStopped" },
+			}
+		end
 	else
-		local body_line = string.format("View: %s (coming next phase)", state.current_view)
+		local body_line = "Unknown view: "
+			.. tostring(state.current_view)
+			.. ". Should have never been possible to get here."
 		body_lines = { body_line }
 		body_line_map = {}
 		body_spans = {
