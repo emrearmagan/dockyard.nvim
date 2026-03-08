@@ -37,6 +37,7 @@ local sections = {
 		section = "Network Actions",
 		maps = {
 			{ key = "o / <CR>", desc = "Expand / Collapse network" },
+			{ key = "L", desc = "Open network popup" },
 			{ key = "d", desc = "Remove selected network" },
 		},
 	},
