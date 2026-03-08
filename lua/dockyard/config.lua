@@ -1,24 +1,66 @@
---- @class LogParser
---- @field name string Display name
---- @field type "docker"|"file" Log source type
---- @field path? string File path for "file" type log parsers
---- @field format? string Log format for "file" type log parsers (e.g., "json", "plain")
---- @field parser? function Main parser function
---- @field detail_parser? function Detail popup parser function
+--- @alias LogSourceType "docker"|"file"
+--- "docker" = fetch from `docker logs` command (stdout/stderr)
+--- "file"   = read from a file inside the container
+
+--- @alias LogParserType "auto"|"json"|"text"
+--- "auto" = detect JSON automatically (line starts with { or [)
+--- "json" = always parse as JSON
+--- "text" = treat as plain text, no parsing
+
+--- Maps your JSON keys to standard field names.
+--- Different frameworks use different names:
+---   Your app:    { level: "info", message: "...", timestamp: "..." }
+---   Pino/Bunyan: { level: 30, msg: "...", time: 1234567890 }
+---   Zap:         { level: "info", msg: "...", ts: 1234567890 }
+---
+--- @class LogFieldMapping
+--- @field level? string     JSON key for log level (default: "level")
+--- @field message? string   JSON key for message (default: "message")
+--- @field timestamp? string JSON key for timestamp (default: "timestamp")
+
+--- A single highlight rule. Matches a Lua pattern and applies a color.
+--- Use EITHER 'group' (Neovim highlight group) OR 'color' (hex), not both.
+---
+--- @class LogHighlightRule
+--- @field pattern string    Lua pattern to match (e.g., "%[ERROR%]", "%d+%.%d+%.%d+%.%d+")
+--- @field group? string     Neovim highlight group (e.g., "DiagnosticError", "Comment")
+--- @field color? string     Hex color (e.g., "#ff5555", "#50fa7b")
+---
+--- Examples:
+---   { pattern = "%[ERROR%]", group = "DiagnosticError" }  -- Use built-in group
+---   { pattern = "%[CRITICAL%]", color = "#ff0000" }       -- Use custom hex color
+---   { pattern = "%d%d:%d%d:%d%d", group = "Comment" }     -- Timestamps gray
+
+--- A log source defines where to get logs and how to display them.
+--- A container can have multiple sources (docker output, various log files).
+---
+--- @class LogSource
+--- @field name? string                       Display name (auto-generated if omitted)
+--- @field type LogSourceType                 Where to get logs ("docker" or "file")
+--- @field path? string                       File path (required when type="file")
+--- @field parser? LogParserType              How to parse: "auto", "json", or "text"
+--- @field fields? LogFieldMapping            JSON field mappings (for json parser)
+--- @field format? fun(entry: table): string  User function to format the display row
+--- @field highlights? LogHighlightRule[]     Highlight rules for this source
 
 --- @class ContainerLogConfig
---- @field [1] LogParser Log parser configuration
+--- @field sources? LogSource[]   Log sources for this container
+--- @field max_lines? number      Override global max_lines
+--- @field follow? boolean        Override global follow
+--- @field tail? number           Override global tail
 
 --- @class LogLensConfig
---- @field max_lines number Maximum number of log lines to display
---- @field containers table<string, ContainerLogConfig> Per-container configs
+--- @field max_lines? number                             Max lines in buffer (default: 2000)
+--- @field follow? boolean                               Auto-scroll to new logs (default: true)
+--- @field tail? number                                  Lines to fetch initially (default: 100)
+--- @field containers? table<string, ContainerLogConfig> Per-container configurations
 
 --- @class DisplayConfig
 --- @field views string[] Order of tabs
 
 --- @class DockyardConfig
 --- @field display DisplayConfig Display settings
---- @field loglens LogLensConfig Log lens settings
+--- @field loglens LogLensConfig LogLens settings
 
 local M = {}
 
@@ -29,6 +71,8 @@ M.options = {
 	},
 	loglens = {
 		max_lines = 2000,
+		follow = true,
+		tail = 100,
 		containers = {},
 	},
 }
@@ -45,7 +89,6 @@ local function create_commands()
 	vim.api.nvim_create_user_command("DockyardFull", function()
 		require("dockyard.ui").open_full()
 	end, { desc = "Open Dockyard Fullscreen" })
-
 end
 
 ---@param opts? DockyardConfig
