@@ -5,6 +5,7 @@ local config = require("dockyard.config")
 
 local header = require("dockyard.ui.components.header")
 local navbar = require("dockyard.ui.components.navbar")
+local containers_view = require("dockyard.ui.views.containers")
 
 local ns = vim.api.nvim_create_namespace("dockyard.ui")
 
@@ -45,6 +46,25 @@ local function apply_spans(buf, spans)
 	end
 end
 
+local function append_body(lines, spans, body_lines, body_spans)
+	local body_start = #lines
+
+	for _, line in ipairs(body_lines or {}) do
+		table.insert(lines, line)
+	end
+
+	for _, span in ipairs(body_spans or {}) do
+		table.insert(spans, {
+			line = body_start + span.line,
+			start_col = span.start_col,
+			end_col = span.end_col,
+			hl_group = span.hl_group,
+		})
+	end
+
+	return body_start
+end
+
 function M.render()
 	local buf = state.buf_id
 	if buf == nil or not vim.api.nvim_buf_is_valid(buf) then
@@ -69,15 +89,33 @@ function M.render()
 	)
 	table.insert(lines, "")
 
-	local body_line = string.format("View: %s (table disabled)", state.current_view)
-	table.insert(lines, body_line)
-	table.insert(spans, {
-		line = #lines - 1,
-		start_col = 0,
-		end_col = #body_line,
-		hl_group = "DockyardDim",
-	})
+	local body_lines, body_line_map, body_spans
+	if state.current_view == "containers" then
+		local ok
+		ok, body_lines, body_line_map, body_spans = pcall(containers_view.render, width)
+		if not ok then
+			local msg = "Dockyard render error: " .. tostring(body_lines)
+			vim.notify(msg, vim.log.levels.ERROR)
+			body_lines = { msg }
+			body_line_map = {}
+			body_spans = {
+				{ line = 0, start_col = 0, end_col = #msg, hl_group = "DockyardStopped" },
+			}
+		end
+	else
+		local body_line = string.format("View: %s (coming next phase)", state.current_view)
+		body_lines = { body_line }
+		body_line_map = {}
+		body_spans = {
+			{ line = 0, start_col = 0, end_col = #body_line, hl_group = "DockyardDim" },
+		}
+	end
+
+	local body_start = append_body(lines, spans, body_lines, body_spans)
 	state.line_map = {}
+	for lnum, item in pairs(body_line_map or {}) do
+		state.line_map[body_start + lnum] = item
+	end
 
 	local was_modifiable = vim.api.nvim_get_option_value("modifiable", { buf = buf })
 	if not was_modifiable then
