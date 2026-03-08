@@ -36,7 +36,19 @@ local function open_with(mode, win_config_fn)
 		state.buf_id = ui_utils.create_buf()
 	end
 
-	state.win_id = vim.api.nvim_open_win(state.buf_id, true, win_config_fn())
+	if mode == "full" then
+		vim.cmd("tabnew")
+		state.tab_id = vim.api.nvim_get_current_tabpage()
+		state.win_id = vim.api.nvim_get_current_win()
+		local tab_buf = vim.api.nvim_get_current_buf()
+		vim.api.nvim_win_set_buf(state.win_id, state.buf_id)
+		if tab_buf ~= state.buf_id and vim.api.nvim_buf_is_valid(tab_buf) then
+			pcall(vim.api.nvim_buf_delete, tab_buf, { force = true })
+		end
+	else
+		state.win_id = vim.api.nvim_open_win(state.buf_id, true, win_config_fn())
+		state.tab_id = nil
+	end
 	ui_utils.apply_win_config(state.win_id, mode)
 	renderer.render()
 	keymaps.register_global(state.buf_id, {
@@ -113,6 +125,11 @@ M.resize = function()
 		return
 	end
 
+	if state.mode == "full" then
+		renderer.render()
+		return
+	end
+
 	local config_fn = win_config_by_mode[state.mode] or ui_utils.panel_win_config
 	vim.api.nvim_win_set_config(state.win_id, config_fn())
 	renderer.render()
@@ -135,7 +152,17 @@ M.close = function()
 		return
 	end
 
-	vim.api.nvim_win_close(state.win_id, true)
+	if state.mode == "full" then
+		if state.tab_id ~= nil and vim.api.nvim_tabpage_is_valid(state.tab_id) then
+			local current_tab = vim.api.nvim_get_current_tabpage()
+			if current_tab ~= state.tab_id then
+				vim.api.nvim_set_current_tabpage(state.tab_id)
+			end
+			vim.cmd("tabclose")
+		end
+	else
+		vim.api.nvim_win_close(state.win_id, true)
+	end
 	state.win_id = nil
 
 	if state.prev_win ~= nil and vim.api.nvim_win_is_valid(state.prev_win) then
@@ -143,6 +170,7 @@ M.close = function()
 	end
 
 	state.prev_win = nil
+	state.tab_id = nil
 	unregister_view_keymaps()
 	if state.buf_id ~= nil then
 		keymaps.unregister_global(state.buf_id)
