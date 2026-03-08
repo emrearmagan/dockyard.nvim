@@ -37,7 +37,6 @@ local function create_commands()
 	-- Ensure we replace any stale command handlers from previous reloads.
 	pcall(vim.api.nvim_del_user_command, "Dockyard")
 	pcall(vim.api.nvim_del_user_command, "DockyardFull")
-	pcall(vim.api.nvim_del_user_command, "DockyardToggle")
 
 	vim.api.nvim_create_user_command("Dockyard", function()
 		require("dockyard.ui").open()
@@ -47,14 +46,6 @@ local function create_commands()
 		require("dockyard.ui").open_full()
 	end, { desc = "Open Dockyard Fullscreen" })
 
-	vim.api.nvim_create_user_command("DockyardToggle", function()
-		local ui = require("dockyard.ui")
-		if ui.is_open() then
-			ui.close()
-		else
-			ui.open()
-		end
-	end, { desc = "Toggle Dockyard UI" })
 end
 
 ---@param opts? DockyardConfig
