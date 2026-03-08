@@ -2,6 +2,7 @@ local M = {}
 
 local ui_state = require("dockyard.ui.state")
 local container_actions = require("dockyard.ui.actions.containers")
+local navigation = require("dockyard.ui.navigation")
 
 local function open_details_at_cursor()
 	local node = M.get_item_at_cursor()
@@ -57,8 +58,8 @@ function M.register_global(buf, handlers)
 		M._handlers.refresh()
 	end, opts)
 
-	vim.keymap.set("n", "j", "j", opts)
-	vim.keymap.set("n", "k", "k", opts)
+	vim.keymap.set("n", "j", navigation.down, opts)
+	vim.keymap.set("n", "k", navigation.up, opts)
 
 	vim.keymap.set("n", "<Tab>", function()
 		M._handlers.next_view()
