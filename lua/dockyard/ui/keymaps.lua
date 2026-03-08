@@ -80,7 +80,7 @@ function M.register_view(buf, view)
 		container_actions.remove(M.get_item_at_cursor(), on_container_action_done, vim.notify)
 	end, opts)
 
-	vim.keymap.set("n", "K", function()
+	vim.keymap.set("n", "L", function()
 		local item = M.get_item_at_cursor()
 		if item then
 			require("dockyard.ui.popups.container").open(item)
@@ -97,7 +97,7 @@ function M.unregister_view(buf, view)
 	pcall(vim.keymap.del, "n", "x", { buffer = buf })
 	pcall(vim.keymap.del, "n", "r", { buffer = buf })
 	pcall(vim.keymap.del, "n", "d", { buffer = buf })
-	pcall(vim.keymap.del, "n", "K", { buffer = buf })
+	pcall(vim.keymap.del, "n", "L", { buffer = buf })
 end
 
 return M
