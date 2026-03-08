@@ -33,7 +33,7 @@ M.options = {
 	},
 }
 
-local function setup_keymaps()
+local function create_commands()
 	-- Ensure we replace any stale command handlers from previous reloads.
 	pcall(vim.api.nvim_del_user_command, "Dockyard")
 	pcall(vim.api.nvim_del_user_command, "DockyardFull")
@@ -60,7 +60,7 @@ end
 ---@param opts? DockyardConfig
 function M.setup(opts)
 	M.options = vim.tbl_deep_extend("force", M.options, opts or {})
-	setup_keymaps()
+	create_commands()
 end
 
 return M

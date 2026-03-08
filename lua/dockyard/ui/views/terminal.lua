@@ -1,10 +1,10 @@
 -- TODO: Add support for native terminal buffers as well, but toggleterm is the most popular and has a good API for this
 
 local M = {}
-local ui_state = require("dockyard.ui.state")
 
 -- One Sessions per container. Those are for reference
 local toggleterm_sessions = {}
+local float_session = nil
 
 local function build_exec_cmd(container_id, shell)
 	shell = shell or "sh"
@@ -15,51 +15,96 @@ local function is_valid_win(win)
 	return win ~= nil and vim.api.nvim_win_is_valid(win)
 end
 
-local function resolve_host_win(target_win)
-	if is_valid_win(target_win) then
-		local cfg = vim.api.nvim_win_get_config(target_win)
-		if cfg.relative == "" then
-			return target_win
-		end
+local function focus_term_if_open(term)
+	if term == nil then
+		return false
 	end
-
-	if is_valid_win(ui_state.prev_win) then
-		return ui_state.prev_win
-	end
-
-	return vim.api.nvim_get_current_win()
-end
-
--- ----------------------------
--- Toggleterm backend
--- ----------------------------
-local function open_with_toggleterm(container_id, shell, target_win)
-	local ok, mod = pcall(require, "toggleterm.terminal")
-	if not ok then
+	if not is_valid_win(term.window) then
 		return false
 	end
 
-	local Terminal = mod.Terminal
-	local direction = "horizontal"
+	vim.api.nvim_set_current_win(term.window)
+	vim.cmd("startinsert")
+	return true
+end
 
-	local session = toggleterm_sessions[container_id]
-	if session ~= nil and session.direction ~= direction then
+local function open_panel_terminal(Terminal, container_id, shell)
+	if float_session ~= nil and float_session.container_id ~= container_id then
 		pcall(function()
-			session:close()
+			float_session.term:close()
 		end)
-		session = nil
-		toggleterm_sessions[container_id] = nil
+		float_session = nil
 	end
 
+	if float_session == nil then
+		local ok_new, term = pcall(Terminal.new, Terminal, {
+			cmd = build_exec_cmd(container_id, shell),
+			direction = "float",
+			hidden = true,
+			close_on_exit = true,
+			float_opts = {
+				border = "curved",
+				zindex = 260,
+				width = math.floor(vim.o.columns * 0.7),
+				height = math.floor(vim.o.lines * 0.5),
+			},
+			on_open = function()
+				vim.cmd("startinsert")
+			end,
+			on_exit = function(t)
+				vim.schedule(function()
+					if t ~= nil and is_valid_win(t.window) then
+						pcall(vim.api.nvim_win_close, t.window, true)
+					end
+				end)
+				float_session = nil
+			end,
+		})
+		if not ok_new then
+			vim.notify("Dockyard: failed to create toggleterm session", vim.log.levels.ERROR)
+			return false
+		end
+
+		float_session = {
+			container_id = container_id,
+			term = term,
+		}
+	end
+
+	if focus_term_if_open(float_session.term) then
+		return true
+	end
+
+	local ok_open = pcall(function()
+		float_session.term:open()
+	end)
+	if not ok_open then
+		vim.notify("Dockyard: failed to open toggleterm session", vim.log.levels.ERROR)
+		return false
+	end
+
+	return true
+end
+
+local function open_full_terminal(Terminal, container_id, shell, target_win)
+	local session = toggleterm_sessions[container_id]
 	if session == nil then
 		local ok_new, new_session = pcall(Terminal.new, Terminal, {
 			cmd = build_exec_cmd(container_id, shell),
-			direction = direction,
+			direction = "horizontal",
 			hidden = true,
-			close_on_exit = false,
+			close_on_exit = true,
 			size = 15,
 			on_open = function()
 				vim.cmd("startinsert")
+			end,
+			on_exit = function(t)
+				vim.schedule(function()
+					if t ~= nil and is_valid_win(t.window) then
+						pcall(vim.api.nvim_win_close, t.window, true)
+					end
+				end)
+				toggleterm_sessions[container_id] = nil
 			end,
 		})
 		if not ok_new then
@@ -71,8 +116,14 @@ local function open_with_toggleterm(container_id, shell, target_win)
 		toggleterm_sessions[container_id] = session
 	end
 
+	if focus_term_if_open(session) then
+		return true
+	end
+
 	local ok_open = pcall(function()
-		vim.api.nvim_set_current_win(resolve_host_win(target_win))
+		if is_valid_win(target_win) then
+			vim.api.nvim_set_current_win(target_win)
+		end
 		session:open()
 	end)
 	if not ok_open then
@@ -83,13 +134,37 @@ local function open_with_toggleterm(container_id, shell, target_win)
 	return true
 end
 
-function M.open(container_id, shell, target_win)
+-- ----------------------------
+-- Toggleterm backend
+-- ----------------------------
+local function open_with_toggleterm(container_id, shell, ctx)
+	local ok, mod = pcall(require, "toggleterm.terminal")
+	if not ok then
+		return false
+	end
+
+	local Terminal = mod.Terminal
+	local mode = (ctx and ctx.mode) or "panel"
+	local target_win = ctx and ctx.win
+
+	if mode == "panel" then
+		return open_panel_terminal(Terminal, container_id, shell)
+	end
+
+	if mode == "full" then
+		return open_full_terminal(Terminal, container_id, shell, target_win)
+	end
+
+	return false
+end
+
+function M.open(container_id, shell, ctx)
 	if container_id == nil or container_id == "" then
 		vim.notify("Dockyard: no container selected", vim.log.levels.WARN)
 		return
 	end
 
-	if open_with_toggleterm(container_id, shell, target_win) then
+	if open_with_toggleterm(container_id, shell, ctx) then
 		return
 	end
 

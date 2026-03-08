@@ -94,7 +94,10 @@ function M.register_view(buf, view)
 	vim.keymap.set("n", "T", function()
 		local item = M.get_item_at_cursor()
 		if item then
-			require("dockyard.ui.views.terminal").open(item.id, "sh", ui_state.win_id)
+			require("dockyard.ui.views.terminal").open(item.id, "sh", {
+				mode = ui_state.mode,
+				win = ui_state.win_id,
+			})
 		end
 	end, opts)
 end
