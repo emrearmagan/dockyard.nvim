@@ -79,16 +79,16 @@ function M.render()
 	})
 	state.line_map = {}
 
-	local was_modifiable = vim.api.nvim_buf_get_option(buf, "modifiable")
+	local was_modifiable = vim.api.nvim_get_option_value("modifiable", { buf = buf })
 	if not was_modifiable then
-		vim.api.nvim_buf_set_option(buf, "modifiable", true)
+		vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 	end
 
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	apply_spans(buf, spans)
 
 	if not was_modifiable then
-		vim.api.nvim_buf_set_option(buf, "modifiable", false)
+		vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 	end
 end
 
