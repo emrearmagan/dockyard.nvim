@@ -13,23 +13,42 @@ local function is_valid_state(state)
 end
 
 ---@param rows table[]
+---@param order string[]|nil
 ---@return table[]
-local function infer_columns(rows)
+---Infer table columns from the first formatted row. Might later be extended to support multiple rows and more complex logic.
+---
+---If `order` is provided (from `source._order`), keys are taken in that order.
+---Otherwise, keys are taken from the first row table.
+---
+---Examples:
+---  row = { time = "12:00:00", level = "INFO", message = "ok" }
+---  order = { "time", "level", "message" }
+---  -> columns: Time, Level, Message
+---
+---  row = { message = "ok", level = "INFO" }
+---  order = nil
+---  -> columns inferred from row keys
+local function infer_columns(rows, order)
 	local first = rows[1]
 	if type(first) ~= "table" then
-		return { { key = "message", name = "Message" } }
+		return {}
 	end
 
 	local cols = {}
-	for key, _ in pairs(first) do
-		table.insert(cols, { key = key, name = key:gsub("^%l", string.upper) })
+	if type(order) == "table" then
+		for _, key in ipairs(order) do
+			if type(key) == "string" and first[key] ~= nil then
+				table.insert(cols, { key = key, name = key:gsub("^%l", string.upper) })
+			end
+		end
+	else
+		for key, _ in pairs(first) do
+			table.insert(cols, { key = key, name = key:gsub("^%l", string.upper) })
+		end
 	end
-	table.sort(cols, function(a, b)
-		return tostring(a.key) < tostring(b.key)
-	end)
 
 	if #cols == 0 then
-		return { { key = "message", name = "Message" } }
+		return {}
 	end
 
 	return cols
@@ -47,7 +66,16 @@ function M.render(state)
 	})
 	vim.api.nvim_set_option_value("winbar", winbar, { win = state.win_id })
 
-	local columns = infer_columns(state.entries)
+	local source = state.active_source or {}
+	local columns = infer_columns(state.entries, source._order)
+	if #columns == 0 then
+		vim.api.nvim_set_option_value("modifiable", true, { buf = state.buf_id })
+		vim.api.nvim_buf_set_lines(state.buf_id, 0, -1, false, {})
+		vim.api.nvim_set_option_value("modifiable", false, { buf = state.buf_id })
+		state.line_map = {}
+		return
+	end
+
 	local width = vim.api.nvim_win_get_width(state.win_id)
 	local lines, line_map = table_renderer.render({
 		columns = columns,

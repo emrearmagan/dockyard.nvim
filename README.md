@@ -45,12 +45,9 @@ A powerful and interactive Docker management tool for Neovim, designed for a fas
 require("dockyard").setup({})
 ```
 
-With no configuration, LogLens uses sensible defaults:
-- Fetches logs from Docker stdout/stderr
-- Auto-detects JSON vs plain text
-- Shows raw log lines
+With no configuration, LogLens UI works but log sources must be configured per container.
 
-### Full Configuration
+### Full Configuration (Current)
 
 ```lua
 require("dockyard").setup({
@@ -58,17 +55,8 @@ require("dockyard").setup({
     views = { "containers", "images", "networks" },
   },
   loglens = {
-    max_lines = 2000,   -- Max lines to keep in memory
-    follow = true,      -- Auto-scroll to new logs
-    tail = 100,         -- Lines to fetch on open
-
-    default_source = {
-      type = "docker",  -- "docker" or "file"
-      parser = "auto",  -- "auto", "json", or "text"
-    },
-
     containers = {
-      -- Per-container configuration (see LogLens section below)
+      -- Per-container configuration (see examples below)
     },
   },
 })
@@ -76,9 +64,18 @@ require("dockyard").setup({
 
 ## LogLens Configuration
 
-LogLens gives you **full control** over how logs are displayed and highlighted.
+LogLens is config-driven. For each source you define:
+- where logs come from (`type`, `path`)
+- how logs are parsed (`parser`)
+- how each row is displayed (`format(entry) -> table`)
 
-### Basic Example: JSON Logs
+Important:
+- Supported parsers now: `"json"` and `"text"`
+- `"auto"` is not supported
+- `format` must return a row table (not a string)
+- You do not need `max_lines`, `tail`, or `follow` in user config
+
+### Example: JSON Logs (Row Table Output)
 
 ```lua
 containers = {
@@ -89,15 +86,26 @@ containers = {
         type = "file",
         path = "/var/log/backend.json",
         parser = "json",
+        _order = { "time", "level", "message", "context" },
 
-        -- Format: how each row looks
+        -- format must return a table row
         format = function(entry)
           local ts = entry.timestamp and entry.timestamp:sub(12, 19) or "--:--:--"
           local lvl = (entry.level or "info"):upper()
-          return string.format("%s [%s] %s", ts, lvl, entry.message or "")
+
+          local ctx = (entry.data and entry.data.context) or {}
+          local user_id = ctx.user_id or "-"
+          local trace_id = ctx.trace_id or "-"
+
+          return {
+            time = ts,
+            level = lvl,
+            message = entry.message or "",
+            context = string.format("user=%s trace=%s", user_id, trace_id),
+          }
         end,
 
-        -- Highlights: what to color
+        -- optional for later highlighting phase
         highlights = {
           { pattern = "%d%d:%d%d:%d%d", group = "Comment" },
           { pattern = "%[ERROR%]", group = "ErrorMsg" },
@@ -110,7 +118,7 @@ containers = {
 },
 ```
 
-### Basic Example: Plain Text Logs
+### Example: Plain Text Logs
 
 ```lua
 containers = {
@@ -121,19 +129,11 @@ containers = {
         type = "file",
         path = "/var/log/nginx/access.log",
         parser = "text",
+        _order = { "line" },
 
         format = function(entry)
-          return entry.raw  -- Show line as-is
+          return { line = entry.raw or "" }
         end,
-
-        highlights = {
-          -- HTTP status codes
-          { pattern = '" 2%d%d ', color = "#50fa7b" },   -- 2xx green
-          { pattern = '" 4%d%d ', color = "#ffb86c" },   -- 4xx orange
-          { pattern = '" 5%d%d ', color = "#ff5555" },   -- 5xx red
-          -- IPs
-          { pattern = "%d+%.%d+%.%d+%.%d+", group = "Comment" },
-        },
       },
     },
   },
@@ -149,18 +149,18 @@ containers = {
 | `name` | string | Display name for the source |
 | `type` | `"docker"` \| `"file"` | Where to get logs |
 | `path` | string | File path (required if `type = "file"`) |
-| `parser` | `"auto"` \| `"json"` \| `"text"` | How to parse lines |
+| `parser` | `"json"` \| `"text"` | How to parse lines |
+| `_order` | `string[]` | Optional display key order |
 | `fields` | table | JSON field mapping (see below) |
-| `format` | function | Format function: `entry → string` |
-| `highlights` | table | Highlight rules (see below) |
+| `format` | function | Format function: `entry -> row table` |
+| `highlights` | table | Optional (used in later highlighting phase) |
 
 #### Parser Types
 
 | Parser | `entry` contains | Use case |
 |--------|------------------|----------|
-| `"json"` | `.level`, `.message`, `.timestamp`, `.raw` | JSON logs |
-| `"text"` | `.raw` only | Plain text logs |
-| `"auto"` | Detects per-line | Mixed logs |
+| `"json"` | `.level`, `.message`, `.timestamp`, `.raw`, `.data` | JSON logs |
+| `"text"` | `.raw`, `.message` | Plain text logs |
 
 #### JSON Field Mapping
 
@@ -175,7 +175,15 @@ fields = {
 },
 ```
 
-#### Highlight Rules
+#### `_order` (optional)
+
+Use `_order` on source to control column order without defining full column config:
+
+```lua
+_order = { "time", "level", "message", "context" }
+```
+
+#### Highlight Rules (later phase)
 
 Each rule matches a Lua pattern and applies a color:
 
@@ -211,8 +219,9 @@ A container can have multiple log sources:
     {
       name = "Docker Output",
       type = "docker",
-      parser = "auto",
-      format = function(entry) return entry.raw end,
+      parser = "text",
+      _order = { "line" },
+      format = function(entry) return { line = entry.raw or "" } end,
       highlights = {},
     },
     {
@@ -220,12 +229,14 @@ A container can have multiple log sources:
       type = "file",
       path = "/var/log/app.log",
       parser = "json",
+      _order = { "level", "message" },
       format = function(entry)
-        return string.format("[%s] %s", entry.level, entry.message)
+        return {
+          level = tostring(entry.level or "INFO"),
+          message = entry.message or "",
+        }
       end,
-      highlights = {
-        { pattern = "%[error%]", group = "ErrorMsg" },
-      },
+      highlights = {},
     },
   },
 },
