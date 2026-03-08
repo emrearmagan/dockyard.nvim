@@ -2,6 +2,26 @@ local M = {}
 
 local job = require("plenary.job")
 
+---Normalize Docker status text into a stable semantic status key.
+---@param raw string|nil
+---@return "running"|"paused"|"restarting"|"dead"|"stopped"
+function M.to_status(raw)
+	raw = tostring(raw or ""):lower()
+	if raw:find("up", 1, true) then
+		return "running"
+	end
+	if raw:find("paused", 1, true) then
+		return "paused"
+	end
+	if raw:find("restarting", 1, true) then
+		return "restarting"
+	end
+	if raw:find("dead", 1, true) then
+		return "dead"
+	end
+	return "stopped"
+end
+
 local function run_docker_command(args, callback)
 	job:new({
 		command = "docker",
