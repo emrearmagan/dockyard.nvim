@@ -186,6 +186,30 @@ M.container_action = function(container_id, action, callback)
 	end)
 end
 
+--- @param image_id string
+--- @param action "rm"
+--- @param callback fun(result: {ok: boolean, error?: string})
+M.image_action = function(image_id, action, callback)
+	run_docker_command({ "image", action, image_id }, function(result)
+		if result.ok then
+			callback({ ok = true })
+		else
+			callback({ ok = false, error = result.error })
+		end
+	end)
+end
+
+--- @param callback fun(result: {ok: boolean, error?: string})
+M.image_prune = function(callback)
+	run_docker_command({ "image", "prune", "-f" }, function(result)
+		if result.ok then
+			callback({ ok = true })
+		else
+			callback({ ok = false, error = result.error })
+		end
+	end)
+end
+
 --- @class ContainerStats
 --- @field cpu_perc string
 --- @field mem_usage string
@@ -229,6 +253,7 @@ M.container_stats = function(container_id, callback)
 		callback({ ok = true, data = parsed })
 	end)
 end
+
 
 --- @param type "container"|"image"|"network"
 --- @param id string

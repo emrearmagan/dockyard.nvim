@@ -108,7 +108,10 @@ local function tree_prefix(row, col_index, tree)
 	end
 
 	if level == 0 then
-		return ""
+		if not tree.show_indicator then
+			return ""
+		end
+		return "  "
 	end
 
 	return indent .. tree.leaf_prefix

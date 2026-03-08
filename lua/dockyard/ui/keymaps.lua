@@ -62,57 +62,89 @@ function M.unregister_global(buf)
 end
 
 function M.register_view(buf, view)
-	if view ~= "containers" then
-		return
-	end
-
+	M.unregister_view(buf, view)
 	local opts = { buffer = buf, silent = true, nowait = true }
 
-	vim.keymap.set("n", "s", function()
-		container_actions.toggle_start_stop(M.get_item_at_cursor(), on_container_action_done, vim.notify)
-	end, opts)
+	-- Containers
+	if view == "containers" then
+		vim.keymap.set("n", "s", function()
+			container_actions.toggle_start_stop(M.get_item_at_cursor(), on_container_action_done, vim.notify)
+		end, opts)
 
-	vim.keymap.set("n", "x", function()
-		container_actions.stop(M.get_item_at_cursor(), on_container_action_done, vim.notify)
-	end, opts)
+		vim.keymap.set("n", "x", function()
+			container_actions.stop(M.get_item_at_cursor(), on_container_action_done, vim.notify)
+		end, opts)
 
-	vim.keymap.set("n", "r", function()
-		container_actions.restart(M.get_item_at_cursor(), on_container_action_done, vim.notify)
-	end, opts)
+		vim.keymap.set("n", "r", function()
+			container_actions.restart(M.get_item_at_cursor(), on_container_action_done, vim.notify)
+		end, opts)
 
-	vim.keymap.set("n", "d", function()
-		container_actions.remove(M.get_item_at_cursor(), on_container_action_done, vim.notify)
-	end, opts)
+		vim.keymap.set("n", "d", function()
+			container_actions.remove(M.get_item_at_cursor(), on_container_action_done, vim.notify)
+		end, opts)
 
-	vim.keymap.set("n", "L", function()
-		local item = M.get_item_at_cursor()
-		if item then
-			require("dockyard.ui.popups.container").open(item)
-		end
-	end, opts)
+		vim.keymap.set("n", "L", function()
+			local item = M.get_item_at_cursor()
+			if item then
+				require("dockyard.ui.popups.container").open(item)
+			end
+		end, opts)
 
-	vim.keymap.set("n", "T", function()
-		local item = M.get_item_at_cursor()
-		if item then
-			require("dockyard.ui.views.terminal").open(item.id, "sh", {
-				mode = ui_state.mode,
-				win = ui_state.win_id,
-			})
-		end
-	end, opts)
+		vim.keymap.set("n", "<CR>", function()
+			local item = M.get_item_at_cursor()
+			if item then
+				require("dockyard.ui.popups.container").open(item)
+			end
+		end, opts)
+
+		vim.keymap.set("n", "T", function()
+			local item = M.get_item_at_cursor()
+			if item then
+				require("dockyard.ui.views.terminal").open(item.id, "sh", {
+					mode = ui_state.mode,
+					win = ui_state.win_id,
+				})
+			end
+		end, opts)
+
+	-- Images
+	elseif view == "images" then
+		local images_view = require("dockyard.ui.views.images")
+		local images_actions = require("dockyard.ui.actions.images")
+
+		vim.keymap.set("n", "o", function()
+			local node = M.get_item_at_cursor()
+			if node then
+				images_view.toggle(node)
+				M._handlers.refresh()
+			end
+		end, opts)
+
+		vim.keymap.set("n", "d", function()
+			local node = M.get_item_at_cursor()
+			images_actions.remove(node, M._handlers.refresh, vim.notify)
+		end, opts)
+
+		vim.keymap.set("n", "P", function()
+			images_actions.prune(M._handlers.refresh)
+		end, opts)
+	end
 end
 
 function M.unregister_view(buf, view)
-	if view ~= "containers" then
-		return
+	if view == "containers" then
+		pcall(vim.keymap.del, "n", "s", { buffer = buf })
+		pcall(vim.keymap.del, "n", "x", { buffer = buf })
+		pcall(vim.keymap.del, "n", "r", { buffer = buf })
+		pcall(vim.keymap.del, "n", "d", { buffer = buf })
+		pcall(vim.keymap.del, "n", "L", { buffer = buf })
+		pcall(vim.keymap.del, "n", "<CR>", { buffer = buf })
+		pcall(vim.keymap.del, "n", "T", { buffer = buf })
+	elseif view == "images" then
+		pcall(vim.keymap.del, "n", "o", { buffer = buf })
+		pcall(vim.keymap.del, "n", "d", { buffer = buf })
+		pcall(vim.keymap.del, "n", "P", { buffer = buf })
 	end
-
-	pcall(vim.keymap.del, "n", "s", { buffer = buf })
-	pcall(vim.keymap.del, "n", "x", { buffer = buf })
-	pcall(vim.keymap.del, "n", "r", { buffer = buf })
-	pcall(vim.keymap.del, "n", "d", { buffer = buf })
-	pcall(vim.keymap.del, "n", "L", { buffer = buf })
-	pcall(vim.keymap.del, "n", "T", { buffer = buf })
 end
 
 return M

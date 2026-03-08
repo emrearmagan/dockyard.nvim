@@ -19,8 +19,16 @@ local sections = {
 			{ key = "s", desc = "Toggle Start / Stop" },
 			{ key = "r", desc = "Restart container" },
 			{ key = "d", desc = "Remove container" },
-			{ key = "L", desc = "Open inspect popup" },
+			{ key = "L / <CR>", desc = "Open inspect popup" },
 			{ key = "T", desc = "Open Terminal" },
+		},
+	},
+	{
+		section = "Image Actions",
+		maps = {
+			{ key = "o", desc = "Expand / Collapse image" },
+			{ key = "d", desc = "Remove selected image" },
+			{ key = "P", desc = "Prune dangling images" },
 		},
 	},
 	{
@@ -29,6 +37,13 @@ local sections = {
 			{ key = "R", desc = "Refresh current view" },
 			{ key = "q", desc = "Close Dockyard" },
 			{ key = "?", desc = "Toggle this help popup" },
+		},
+	},
+	{
+		section = "Commands",
+		maps = {
+			{ key = ":Dockyard", desc = "Toggle panel mode" },
+			{ key = ":DockyardFull", desc = "Toggle full mode" },
 		},
 	},
 }

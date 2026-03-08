@@ -6,6 +6,7 @@ local config = require("dockyard.config")
 local header = require("dockyard.ui.components.header")
 local navbar = require("dockyard.ui.components.navbar")
 local containers_view = require("dockyard.ui.views.containers")
+local images_view = require("dockyard.ui.views.images")
 
 local ns = vim.api.nvim_create_namespace("dockyard.ui")
 
@@ -93,6 +94,18 @@ function M.render()
 	if state.current_view == "containers" then
 		local ok
 		ok, body_lines, body_line_map, body_spans = pcall(containers_view.render, width)
+		if not ok then
+			local msg = "Dockyard render error: " .. tostring(body_lines)
+			vim.notify(msg, vim.log.levels.ERROR)
+			body_lines = { msg }
+			body_line_map = {}
+			body_spans = {
+				{ line = 0, start_col = 0, end_col = #msg, hl_group = "DockyardStopped" },
+			}
+		end
+	elseif state.current_view == "images" then
+		local ok
+		ok, body_lines, body_line_map, body_spans = pcall(images_view.render, width)
 		if not ok then
 			local msg = "Dockyard render error: " .. tostring(body_lines)
 			vim.notify(msg, vim.log.levels.ERROR)

@@ -42,11 +42,10 @@ function M.remove(item, on_done, notify)
 		notify("Dockyard: no container selected", vim.log.levels.WARN)
 		return
 	end
-	vim.ui.input({ prompt = "Type YES to remove " .. tostring(item.name or item.id) .. ": " }, function(input)
-		if input ~= "YES" then
-			return
+	vim.ui.input({ prompt = "Remove container " .. tostring(item.name or item.id) .. "? (y/n)" }, function(input)
+		if input == "y" or input == "Y" then
+			run_action(item, "rm", on_done, notify)
 		end
-		run_action(item, "rm", on_done, notify)
 	end)
 end
 
