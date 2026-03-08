@@ -34,14 +34,98 @@ local function truncate(text, width)
 	return out .. "…"
 end
 
-local function natural_width(column, rows)
+local function resolve_tree(opts)
+	if type(opts) ~= "table" then
+		return nil
+	end
+
+	return {
+		children_key = opts.children_key or "children",
+		expanded_field = opts.expanded_field or "expanded",
+		default_expanded = opts.default_expanded == true,
+		indent = opts.indent or "  ",
+		leaf_prefix = opts.leaf_prefix or "└─ ",
+		show_indicator = opts.show_indicator ~= false,
+		is_expanded = opts.is_expanded,
+	}
+end
+
+local function row_is_expanded(row, has_children, tree)
+	if not has_children then
+		return false
+	end
+	if type(tree.is_expanded) == "function" then
+		return tree.is_expanded(row) == true
+	end
+	if row[tree.expanded_field] ~= nil then
+		return row[tree.expanded_field] == true
+	end
+	return tree.default_expanded
+end
+
+local function flatten_rows(rows, tree)
+	if tree == nil then
+		return rows
+	end
+
+	local out = {}
+
+	local function walk(list, depth)
+		for _, row in ipairs(list or {}) do
+			local children = row[tree.children_key]
+			local has_children = type(children) == "table" and #children > 0
+			local expanded = row_is_expanded(row, has_children, tree)
+			local row_view = vim.tbl_extend("force", row, {
+				_tree_level = depth,
+				_tree_has_children = has_children,
+				_tree_expanded = expanded,
+			})
+			table.insert(out, row_view)
+
+			if has_children and expanded then
+				walk(children, depth + 1)
+			end
+		end
+	end
+
+	walk(rows, 0)
+	return out
+end
+
+local function tree_prefix(row, col_index, tree)
+	if tree == nil or col_index ~= 1 then
+		return ""
+	end
+
+	local level = row._tree_level or 0
+	local indent = string.rep(tree.indent, level)
+	if not tree.show_indicator then
+		return indent
+	end
+
+	if row._tree_has_children then
+		return indent .. (row._tree_expanded and "▾ " or "▸ ")
+	end
+
+	if level == 0 then
+		return ""
+	end
+
+	return indent .. tree.leaf_prefix
+end
+
+local function cell_text(row, column, col_index, tree)
+	return tree_prefix(row, col_index, tree) .. tostring(row[column.key] or "")
+end
+
+local function natural_width(column, rows, col_index, tree)
 	if column.width then
 		return column.width
 	end
 
 	local w = display_width(column.name or column.key or "")
 	for _, row in ipairs(rows) do
-		w = math.max(w, display_width(tostring(row[column.key] or "")))
+		w = math.max(w, display_width(cell_text(row, column, col_index, tree)))
 	end
 
 	return w
@@ -70,10 +154,10 @@ end
 ---@param rows table[]
 ---@param available_width number content area width (excluding left margin)
 ---@param gap_after fun(index:number):number
-local function compute_widths(columns, rows, available_width, gap_after)
+local function compute_widths(columns, rows, available_width, gap_after, tree)
 	local widths = {}
 	for i, c in ipairs(columns) do
-		widths[i] = natural_width(c, rows)
+		widths[i] = natural_width(c, rows, i, tree)
 	end
 	local desired = vim.deepcopy(widths)
 
@@ -141,7 +225,8 @@ end
 
 function M.render(opts)
 	local columns = vim.deepcopy(opts.columns or {})
-	local rows = opts.rows or {}
+	local tree = resolve_tree(opts.tree)
+	local rows = flatten_rows(opts.rows or {}, tree)
 	local width = opts.width or vim.o.columns
 	local margin = opts.margin or 2
 	local right_margin = opts.right_margin or margin
@@ -172,7 +257,7 @@ function M.render(opts)
 	end
 
 	-- Keep both left and right padding so table aligns with navbar framing.
-	compute_widths(columns, rows, math.max(width - margin - right_margin, 1), gap_after)
+	compute_widths(columns, rows, math.max(width - margin - right_margin, 1), gap_after, tree)
 
 	local lines = {}
 	local line_map = {}
@@ -203,7 +288,7 @@ function M.render(opts)
 		local line_parts = {}
 		col_start = margin
 		for i, c in ipairs(columns) do
-			local cell = truncate(row[c.key] or "", c._computed)
+			local cell = truncate(cell_text(row, c, i, tree), c._computed)
 			local padded = pad_right(cell, c._computed)
 			table.insert(line_parts, padded)
 
