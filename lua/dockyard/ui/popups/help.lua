@@ -20,7 +20,7 @@ local sections = {
 			{ key = "r", desc = "Restart container" },
 			{ key = "x", desc = "Stop container" },
 			{ key = "d", desc = "Remove container" },
-			{ key = "o", desc = "Open inspect popup" },
+			{ key = "K", desc = "Open inspect popup" },
 			{ key = "T", desc = "Open Terminal" },
 		},
 	},
@@ -28,7 +28,7 @@ local sections = {
 		section = "Image Actions",
 		maps = {
 			{ key = "<CR>", desc = "Expand / Collapse image" },
-			{ key = "o", desc = "Open image popup" },
+			{ key = "K", desc = "Open image popup" },
 			{ key = "d", desc = "Remove selected image" },
 			{ key = "P", desc = "Prune dangling images" },
 		},
@@ -37,7 +37,7 @@ local sections = {
 		section = "Network Actions",
 		maps = {
 			{ key = "<CR>", desc = "Expand / Collapse network" },
-			{ key = "o", desc = "Open network popup" },
+			{ key = "K", desc = "Open network popup" },
 			{ key = "d", desc = "Remove selected network" },
 		},
 	},

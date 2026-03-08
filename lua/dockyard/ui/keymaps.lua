@@ -73,7 +73,7 @@ function M.register_global(buf, handlers)
 		M._handlers.open_help()
 	end, opts)
 
-	vim.keymap.set("n", "o", open_details_at_cursor, opts)
+	vim.keymap.set("n", "K", open_details_at_cursor, opts)
 end
 
 function M.unregister_global(buf)
@@ -84,7 +84,7 @@ function M.unregister_global(buf)
 	pcall(vim.keymap.del, "n", "<Tab>", { buffer = buf })
 	pcall(vim.keymap.del, "n", "<S-Tab>", { buffer = buf })
 	pcall(vim.keymap.del, "n", "?", { buffer = buf })
-	pcall(vim.keymap.del, "n", "o", { buffer = buf })
+	pcall(vim.keymap.del, "n", "K", { buffer = buf })
 end
 
 function M.register_view(buf, view)
