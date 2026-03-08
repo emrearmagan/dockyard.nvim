@@ -45,32 +45,32 @@ win_config_by_mode.full = full_win_config
 local function create_buf()
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_name(buf, "Dockyard")
-	vim.api.nvim_buf_set_option(buf, "buftype", "nofile")
-	vim.api.nvim_buf_set_option(buf, "swapfile", false)
-	vim.api.nvim_buf_set_option(buf, "bufhidden", "hide")
-	vim.api.nvim_buf_set_option(buf, "filetype", "dockyard")
-	vim.api.nvim_buf_set_option(buf, "modifiable", false)
+	vim.api.nvim_set_option_value("buftype", "nofile", { buf = buf })
+	vim.api.nvim_set_option_value("swapfile", false, { buf = buf })
+	vim.api.nvim_set_option_value("bufhidden", "hide", { buf = buf })
+	vim.api.nvim_set_option_value("filetype", "dockyard", { buf = buf })
+	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 	return buf
 end
 
 local function apply_win_config(win, mode)
-	vim.api.nvim_win_set_option(win, "number", false)
-	vim.api.nvim_win_set_option(win, "relativenumber", false)
-	vim.api.nvim_win_set_option(win, "signcolumn", "no")
-	vim.api.nvim_win_set_option(win, "wrap", false)
-	vim.api.nvim_win_set_option(win, "cursorline", true)
+	vim.api.nvim_set_option_value("number", false, { win = win })
+	vim.api.nvim_set_option_value("relativenumber", false, { win = win })
+	vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
+	vim.api.nvim_set_option_value("wrap", false, { win = win })
+	vim.api.nvim_set_option_value("cursorline", true, { win = win })
 
 	if mode == "full" then
-		vim.api.nvim_win_set_option(
-			win,
+		vim.api.nvim_set_option_value(
 			"winhighlight",
-			"Normal:Normal,NormalFloat:Normal,FloatBorder:FloatBorder,CursorLine:CursorLine"
+			"Normal:Normal,NormalFloat:Normal,FloatBorder:FloatBorder,CursorLine:CursorLine",
+			{ win = win }
 		)
 	else
-		vim.api.nvim_win_set_option(
-			win,
+		vim.api.nvim_set_option_value(
 			"winhighlight",
-			"Normal:NormalFloat,NormalFloat:NormalFloat,FloatBorder:FloatBorder,CursorLine:CursorLine"
+			"Normal:NormalFloat,NormalFloat:NormalFloat,FloatBorder:FloatBorder,CursorLine:CursorLine",
+			{ win = win }
 		)
 	end
 end
