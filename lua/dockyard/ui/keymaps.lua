@@ -3,6 +3,32 @@ local M = {}
 local ui_state = require("dockyard.ui.state")
 local container_actions = require("dockyard.ui.actions.containers")
 
+local function open_details_at_cursor()
+	local node = M.get_item_at_cursor()
+	if not node then
+		return
+	end
+
+	if node.kind == "container" then
+		require("dockyard.ui.popups.container").open(node.item or node)
+		return
+	end
+
+	if node.kind == "image" then
+		require("dockyard.ui.popups.image").open(node)
+		return
+	end
+
+	if node.kind == "network" then
+		require("dockyard.ui.popups.network").open(node)
+		return
+	end
+
+	if ui_state.current_view == "containers" and node.id then
+		require("dockyard.ui.popups.container").open(node)
+	end
+end
+
 function M.get_item_at_cursor()
 	local line = vim.api.nvim_win_get_cursor(0)[1]
 	return ui_state.line_map[line]
@@ -49,6 +75,8 @@ function M.register_global(buf, handlers)
 	vim.keymap.set("n", "?", function()
 		M._handlers.open_help()
 	end, opts)
+
+	vim.keymap.set("n", "L", open_details_at_cursor, opts)
 end
 
 function M.unregister_global(buf)
@@ -59,6 +87,7 @@ function M.unregister_global(buf)
 	pcall(vim.keymap.del, "n", "<Tab>", { buffer = buf })
 	pcall(vim.keymap.del, "n", "<S-Tab>", { buffer = buf })
 	pcall(vim.keymap.del, "n", "?", { buffer = buf })
+	pcall(vim.keymap.del, "n", "L", { buffer = buf })
 end
 
 function M.register_view(buf, view)
@@ -83,13 +112,6 @@ function M.register_view(buf, view)
 			container_actions.remove(M.get_item_at_cursor(), on_container_action_done, vim.notify)
 		end, opts)
 
-		vim.keymap.set("n", "L", function()
-			local item = M.get_item_at_cursor()
-			if item then
-				require("dockyard.ui.popups.container").open(item)
-			end
-		end, opts)
-
 		vim.keymap.set("n", "T", function()
 			local item = M.get_item_at_cursor()
 			if item then
@@ -104,8 +126,6 @@ function M.register_view(buf, view)
 	elseif view == "images" then
 		local images_view = require("dockyard.ui.views.images")
 		local images_actions = require("dockyard.ui.actions.images")
-		local image_popup = require("dockyard.ui.popups.image")
-
 		vim.keymap.set("n", "<CR>", function()
 			local node = M.get_item_at_cursor()
 			if node then
@@ -131,18 +151,10 @@ function M.register_view(buf, view)
 			images_actions.prune(M._handlers.refresh, vim.notify)
 		end, opts)
 
-		vim.keymap.set("n", "L", function()
-			local node = M.get_item_at_cursor()
-			if node then
-				image_popup.open(node)
-			end
-		end, opts)
-
 	-- Networks
 	elseif view == "networks" then
 		local networks_view = require("dockyard.ui.views.networks")
 		local networks_actions = require("dockyard.ui.actions.networks")
-		local network_popup = require("dockyard.ui.popups.network")
 
 		vim.keymap.set("n", "<CR>", function()
 			local node = M.get_item_at_cursor()
@@ -164,13 +176,6 @@ function M.register_view(buf, view)
 			local node = M.get_item_at_cursor()
 			networks_actions.remove(node, M._handlers.refresh, vim.notify)
 		end, opts)
-
-		vim.keymap.set("n", "L", function()
-			local node = M.get_item_at_cursor()
-			if node then
-				network_popup.open(node)
-			end
-		end, opts)
 	end
 end
 
@@ -180,7 +185,6 @@ function M.unregister_view(buf, view)
 		pcall(vim.keymap.del, "n", "x", { buffer = buf })
 		pcall(vim.keymap.del, "n", "r", { buffer = buf })
 		pcall(vim.keymap.del, "n", "d", { buffer = buf })
-		pcall(vim.keymap.del, "n", "L", { buffer = buf })
 		pcall(vim.keymap.del, "n", "<CR>", { buffer = buf })
 		pcall(vim.keymap.del, "n", "T", { buffer = buf })
 	elseif view == "images" then
@@ -188,12 +192,10 @@ function M.unregister_view(buf, view)
 		pcall(vim.keymap.del, "n", "o", { buffer = buf })
 		pcall(vim.keymap.del, "n", "d", { buffer = buf })
 		pcall(vim.keymap.del, "n", "P", { buffer = buf })
-		pcall(vim.keymap.del, "n", "L", { buffer = buf })
 	elseif view == "networks" then
 		pcall(vim.keymap.del, "n", "<CR>", { buffer = buf })
 		pcall(vim.keymap.del, "n", "o", { buffer = buf })
 		pcall(vim.keymap.del, "n", "d", { buffer = buf })
-		pcall(vim.keymap.del, "n", "L", { buffer = buf })
 	end
 end
 
