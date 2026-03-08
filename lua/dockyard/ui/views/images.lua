@@ -249,7 +249,11 @@ function M.toggle(node)
 	if not node or node.kind ~= "image" then
 		return
 	end
-	expanded[node.key] = not expanded[node.key]
+	local current = expanded[node.key]
+	if current == nil then
+		current = true
+	end
+	expanded[node.key] = not current
 end
 
 function M.reset()

@@ -19,7 +19,7 @@ local sections = {
 			{ key = "s", desc = "Toggle Start / Stop" },
 			{ key = "r", desc = "Restart container" },
 			{ key = "d", desc = "Remove container" },
-			{ key = "L / <CR>", desc = "Open inspect popup" },
+			{ key = "L", desc = "Open inspect popup" },
 			{ key = "T", desc = "Open Terminal" },
 		},
 	},
