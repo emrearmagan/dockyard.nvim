@@ -36,14 +36,14 @@ local function nearest_row_index(lines, current_line)
 			return #lines
 		end
 
-		for i = 1, #lines - 1 do
-			local a = lines[i]
-			local b = lines[i + 1]
+		for j = 1, #lines - 1 do
+			local a = lines[j]
+			local b = lines[j + 1]
 			if current_line > a and current_line < b then
 				if (current_line - a) <= (b - current_line) then
-					return i
+					return j
 				end
-				return i + 1
+				return j + 1
 			end
 		end
 	end

@@ -45,7 +45,7 @@ end
 
 --- @class Container
 --- @field id string
---- @field name string[]
+--- @field name string
 --- @field image string
 --- @field command string
 --- @field status string

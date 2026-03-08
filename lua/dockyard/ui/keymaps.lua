@@ -73,7 +73,7 @@ function M.register_global(buf, handlers)
 		M._handlers.open_help()
 	end, opts)
 
-	vim.keymap.set("n", "L", open_details_at_cursor, opts)
+	vim.keymap.set("n", "o", open_details_at_cursor, opts)
 end
 
 function M.unregister_global(buf)
@@ -84,7 +84,7 @@ function M.unregister_global(buf)
 	pcall(vim.keymap.del, "n", "<Tab>", { buffer = buf })
 	pcall(vim.keymap.del, "n", "<S-Tab>", { buffer = buf })
 	pcall(vim.keymap.del, "n", "?", { buffer = buf })
-	pcall(vim.keymap.del, "n", "L", { buffer = buf })
+	pcall(vim.keymap.del, "n", "o", { buffer = buf })
 end
 
 function M.register_view(buf, view)
@@ -124,19 +124,19 @@ function M.register_view(buf, view)
 			end
 		end, opts)
 
+		vim.keymap.set("n", "L", function()
+			local node = M.get_item_at_cursor()
+			local item = node and node.item or nil
+			if item then
+				require("dockyard.loglens").open(item)
+			end
+		end, opts)
+
 	-- Images
 	elseif view == "images" then
 		local images_view = require("dockyard.ui.views.images")
 		local images_actions = require("dockyard.ui.actions.images")
 		vim.keymap.set("n", "<CR>", function()
-			local node = M.get_item_at_cursor()
-			if node then
-				images_view.toggle(node)
-				M._handlers.refresh()
-			end
-		end, opts)
-
-		vim.keymap.set("n", "o", function()
 			local node = M.get_item_at_cursor()
 			if node then
 				images_view.toggle(node)
@@ -159,14 +159,6 @@ function M.register_view(buf, view)
 		local networks_actions = require("dockyard.ui.actions.networks")
 
 		vim.keymap.set("n", "<CR>", function()
-			local node = M.get_item_at_cursor()
-			if node then
-				networks_view.toggle(node)
-				M._handlers.refresh()
-			end
-		end, opts)
-
-		vim.keymap.set("n", "o", function()
 			local node = M.get_item_at_cursor()
 			if node then
 				networks_view.toggle(node)
