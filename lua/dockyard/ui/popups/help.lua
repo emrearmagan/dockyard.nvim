@@ -52,8 +52,8 @@ local sections = {
 	{
 		section = "Commands",
 		maps = {
-			{ key = ":Dockyard", desc = "Toggle panel mode" },
-			{ key = ":DockyardFull", desc = "Toggle full mode" },
+			{ key = ":Dockyard", desc = "Open fullscreen mode" },
+			{ key = ":DockyardFloat", desc = "Open floating mode" },
 		},
 	},
 }

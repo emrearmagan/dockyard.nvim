@@ -2,7 +2,7 @@
 --- "docker" = fetch from `docker logs` command (stdout/stderr)
 --- "file"   = read from a file inside the container
 
---- @alias LogParserType "auto"|"json"|"text"
+--- @alias LogParserType "json"|"text"
 --- "auto" = detect JSON automatically (line starts with { or [)
 --- "json" = always parse as JSON
 --- "text" = treat as plain text, no parsing
@@ -38,9 +38,9 @@
 --- @field name? string                       Display name (auto-generated if omitted)
 --- @field type LogSourceType                 Where to get logs ("docker" or "file")
 --- @field path? string                       File path (required when type="file")
---- @field parser? LogParserType              How to parse: "auto", "json", or "text"
+--- @field parser LogParserType|fun(line: string): table<string, any>|nil
 --- @field fields? LogFieldMapping            JSON field mappings (for json parser)
---- @field format? fun(entry: table): string  User function to format the display row
+--- @field format? fun(entry: table): table<string, any>   User function to format the display row
 --- @field highlights? LogHighlightRule[]     Highlight rules for this source
 
 --- @class ContainerLogConfig
@@ -80,15 +80,16 @@ M.options = {
 local function create_commands()
 	-- Ensure we replace any stale command handlers from previous reloads.
 	pcall(vim.api.nvim_del_user_command, "Dockyard")
+	pcall(vim.api.nvim_del_user_command, "DockyardFloat")
 	pcall(vim.api.nvim_del_user_command, "DockyardFull")
 
 	vim.api.nvim_create_user_command("Dockyard", function()
-		require("dockyard.ui").open()
+		require("dockyard.ui").open_full()
 	end, { desc = "Open Dockyard UI" })
 
-	vim.api.nvim_create_user_command("DockyardFull", function()
-		require("dockyard.ui").open_full()
-	end, { desc = "Open Dockyard Fullscreen" })
+	vim.api.nvim_create_user_command("DockyardFloat", function()
+		require("dockyard.ui").open()
+	end, { desc = "Open Dockyard Floating UI" })
 end
 
 ---@param opts? DockyardConfig

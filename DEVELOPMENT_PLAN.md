@@ -1,5 +1,6 @@
 # Dockyard.nvim - Complete Rewrite Plan
 
+
 ## Project Goal
 
 Rewrite the **dockyard.nvim** Neovim plugin from scratch to:
@@ -52,6 +53,7 @@ Dockyard.nvim is a **Docker management plugin for Neovim** that provides an inte
 | **Async Operations** | Callbacks `fn(callback)` | Standard Lua/plenary pattern |
 | **State Management** | Module-level state | Simple, each module owns its data |
 | **UI Rendering** | Full re-render | Predictable, easy to debug |
+| **LogLens Design** | Source -> Parse -> Format -> Highlight pipeline | Fast, extensible, user-customizable |
 
 ---
 
@@ -112,8 +114,8 @@ dockyard.nvim/
 ```lua
 -- Public API
 M.setup(opts)     -- Merge user config, setup highlights, commands
-M.open()          -- Open in vertical split
-M.open_full()     -- Open in new tab  
+M.open()          -- Open as centered float (~80% screen)
+M.open_full()     -- Open as full-screen float (100% overlay)
 M.close()         -- Close the UI
 M.refresh()       -- Refresh current view data
 ```
@@ -166,10 +168,12 @@ M.is_running(id)       -- Check if container is running
 
 #### `ui/state.lua`
 ```lua
-M.win_id = nil         -- Current window ID
-M.buf_id = nil         -- Current buffer ID
+M.win_id       = nil           -- Current window ID
+M.buf_id       = nil           -- Current buffer ID
+M.prev_win     = nil           -- Window focused before opening Dockyard
 M.current_view = "containers"  -- Active tab
-M.line_to_item = {}    -- Maps buffer line -> data item for actions
+M.line_to_item = {}            -- Maps buffer line -> data item for actions
+M.float_mode   = "panel"       -- "panel" (centered float) | "full" (full-screen float)
 ```
 
 #### `ui/renderer.lua`
@@ -187,6 +191,42 @@ M.render(buf_id, columns, rows, start_line)
 -- Returns: line_to_item mapping
 ```
 
+### LogLens Architecture (Core)
+
+`LogLens` is designed as a composable pipeline so we support all log sources and user customization without creating one giant `loglens.lua` file.
+
+```lua
+-- 1) Source adapter emits raw lines/chunks
+source:start(on_chunk, on_exit)
+
+-- 2) Framer splits stream into entries (newline-safe, JSON-safe)
+framer:push(chunk) -> { entry1, entry2, ... }
+
+-- 3) Parser converts entry to structured object
+parsed = parser:parse(entry)
+
+-- 4) Formatter builds render-ready view text/columns
+view = formatter:format(parsed)
+
+-- 5) Highlighter returns highlight spans/groups for renderer
+spans = highlighter:spans(view, parsed)
+```
+
+#### Source adapters
+- Docker source: `docker logs -f --tail N <container>` (stdout/stderr stream)
+- File source: `docker exec <container> tail -n N -F <path>`
+
+#### Parser/formatter/highlighter goals
+- Plain text logs: pattern/level highlighting, minimal transform
+- JSON logs: parse per-entry, preserve raw payload, structured formatting
+- User rules: keyword + regex rules, per-container/per-source overrides
+
+#### Performance goals
+- Ring buffer with `max_lines` cap (no unbounded growth)
+- Batched UI flush via timer (avoid redraw per line)
+- Incremental append mode for live streams where possible
+- Keep raw + parsed representation to avoid reparsing on every filter toggle
+
 ---
 
 ## Development Phases
@@ -201,111 +241,119 @@ M.render(buf_id, columns, rows, start_line)
 - [x] **LEARN**: Modules, require(), M = {} pattern
 
 ### Phase 1: Config & Setup Pattern
-- [ ] Create `config.lua` with defaults
-- [ ] **LEARN**: `vim.tbl_deep_extend()` for merging tables
-- [ ] Create `init.lua` with `setup(opts)`
-- [ ] Test by notifying config values
+- [x] Create `config.lua` with defaults
+- [x] **LEARN**: `vim.tbl_deep_extend()` for merging tables
+- [x] Create `init.lua` with `setup(opts)`
+- [x] Test by notifying config values
 
-### Phase 2: Docker Module (CLI Wrapper)
-- [ ] **LEARN**: `plenary.job` for async commands
-- [ ] Create `docker.lua` with module pattern
-- [ ] Implement `list_containers(callback)` with result pattern
-- [ ] **LEARN**: `vim.json.decode()` and `pcall()` for error handling
-- [ ] Add `list_images()`, `list_networks()`
-- [ ] Add `container_action()`, `inspect()`
+## Phase 2: Docker Module (CLI Wrapper)
+- [x] **LEARN**: `plenary.job` for async commands
+- [x] Create `docker.lua` with module pattern
+- [x] Implement `list_containers(callback)` with result pattern
+- [x] **LEARN**: `vim.json.decode()` and `pcall()` for error handling
+- [x] Add `list_images()`, `list_networks()`
+- [x] Add `container_action()`, `inspect()`
 
 ### Phase 3: State Management
-- [ ] Create `state/containers.lua` with local state
-- [ ] **LEARN**: Closures
-- [ ] Add `refresh()`, `get_all()`, `get_by_id()`, `is_running()`
-- [ ] Create `state/images.lua`, `state/networks.lua`
+- [x] Create `state/init.lua` with factory function pattern (`create_state(fetch_fn)`)
+- [x] **LEARN**: Closures — factory returns module with shared local state
+- [x] Factory provides `refresh()`, `get_all()`, `get_by_id()`, `last_error()`, `last_updated()`
+- [x] `state/containers.lua`, `state/images.lua`, `state/networks.lua` superseded by factory
+- **Note**: Factory approach chosen over separate files to avoid code duplication
 
 ### Phase 4: UI Foundation
-- [ ] **LEARN**: `vim.api.nvim_*` functions
-- [ ] Create `ui/state.lua`
-- [ ] Create `ui/init.lua` with `open()` (vsplit + buffer)
-- [ ] **LEARN**: Buffer options (buftype, modifiable)
-- [ ] Implement `close()`, `is_open()`
+- [x] **LEARN**: `vim.api.nvim_*` functions (see PHASE_4_UI_FOUNDATION.md)
+- [x] Create `ui/state.lua`
+- [x] Create `ui/init.lua` with `open()` and `open_full()`
+- [x] **Layout decision**: Both modes use floating windows (no splits, no tabs)
+  - `open()` — centered float, configurable size (default ~90% of screen)
+  - `open_full()` — full-screen float (100% width/height, overlays everything)
+  - Shared `open_with(mode, win_config_fn)` helper for both modes
+- [x] **LEARN**: Buffer options (buftype, modifiable)
+- [x] Implement `close()`, `is_open()`
 
 ### Phase 5: Colors & Highlighting
-- [ ] **LEARN**: `vim.api.nvim_set_hl()`
-- [ ] Create `ui/highlights.lua` with color palette
-- [ ] Define highlight groups
-- [ ] **LEARN**: Extmarks for applying highlights
+- [x] **LEARN**: `vim.api.nvim_set_hl()`
+- [x] Create `ui/highlights.lua` with color palette
+- [x] Define highlight groups
+- [x] **LEARN**: Extmarks for applying highlights
 
 ### Phase 6: Renderer & Layout
-- [ ] Create `ui/renderer.lua`
-- [ ] **LEARN**: `vim.api.nvim_buf_set_lines()`
-- [ ] Create `ui/components/header.lua`
-- [ ] Create `ui/components/navbar.lua`
-- [ ] **LEARN**: `string.format()`, `string.rep()`
+- [x] Create `ui/renderer.lua`
+- [x] **LEARN**: `vim.api.nvim_buf_set_lines()`
+- [x] Create `ui/components/header.lua`
+- [x] Create `ui/components/navbar.lua`
+- [x] **LEARN**: `string.format()`, `string.rep()`
 
-### Phase 7: Table Component
-- [ ] Create `ui/components/table.lua`
-- [ ] **LEARN**: `vim.fn.strdisplaywidth()` for unicode
-- [ ] Implement column width calculation
-- [ ] Implement text truncation
-- [ ] Return line-to-data mapping
+### Phase 7: Table Foundation (shared for all views)
+- [x] Create `ui/components/table.lua`
+- [x] **LEARN**: `vim.fn.strdisplaywidth()` for unicode-safe width
+- [x] Implement width calculation, truncation, alignment
+- [x] Return line map + highlight spans (no side effects)
 
-### Phase 8: Containers View
-- [ ] Create `ui/views/containers.lua`
-- [ ] Define columns: Icon, Name, Image, Status, Ports
-- [ ] Transform data into table rows
-- [ ] Add status colors
+### Phase 8: Containers View (first complete workflow)
+- [x] Create `ui/views/containers.lua`
+- [x] Columns: Icon, Name, Image, Status, Ports
+- [x] Transform state data -> table rows + row metadata
+- [x] Integrate status highlighting (`DockyardRunning`, etc.)
+- [x] Added Created column for better parity with Docker listing
 
-### Phase 9: Keymaps & Navigation
+### Phase 9: Navigation & Core Keymaps
 - [ ] Create `ui/keymaps.lua`
-- [ ] **LEARN**: `vim.keymap.set()` with buffer option
-- [ ] Implement j/k, Tab/S-Tab, q, R
-- [ ] Create `get_item_at_cursor()`
+- [ ] **LEARN**: `vim.keymap.set()` buffer-local maps
+- [ ] Implement `j/k`, `Tab/S-Tab`, `q`, `R`, `?`
+- [ ] Implement `get_item_at_cursor()` using line map
 
 ### Phase 10: Container Actions
-- [ ] Implement s (toggle), x (stop), r (restart)
-- [ ] **LEARN**: `vim.ui.select()`, `vim.ui.input()`
-- [ ] Implement d (remove with confirmation)
-- [ ] Auto-refresh after actions
+- [ ] Implement `s`, `x`, `r`, `d` in action module
+- [ ] **LEARN**: `vim.ui.select()`, `vim.ui.input()` confirmations
+- [ ] Action -> refresh pipeline with error notifications
 
-### Phase 11: Images View
-- [ ] Create `ui/views/images.lua`
-- [ ] Implement tree with expand/collapse
-- [ ] Add o (toggle), d (remove), P (prune)
-
-### Phase 12: Networks View
-- [ ] Create `ui/views/networks.lua`
-- [ ] Tree with connected containers
-- [ ] Add actions
-
-### Phase 13: Inspect Popup
+### Phase 11: Inspect Popup
 - [ ] Create `ui/popups/inspect.lua`
-- [ ] **LEARN**: Floating windows
-- [ ] Implement K/Enter to open
+- [ ] Implement `K/Enter` for selected item
+- [ ] Pretty JSON view with scrollable float
 
-### Phase 14: Help Popup
-- [ ] Create `ui/popups/help.lua`
-- [ ] Implement ? toggle
-
-### Phase 15: Terminal / Shell
+### Phase 12: Terminal / Shell
 - [ ] Create `ui/terminal.lua`
-- [ ] **LEARN**: `vim.fn.termopen()`
-- [ ] Implement S to open shell
+- [ ] **LEARN**: `vim.fn.termopen()` and terminal buffer lifecycle
+- [ ] Implement `S` for `docker exec -it` shell/command modes
 
-### Phase 16: LogLens
+### Phase 13: Images View
+- [ ] Create `ui/views/images.lua`
+- [ ] Tree model + expand/collapse state
+- [ ] Actions: `o`, `d`, `P` (prune)
+
+### Phase 14: Networks View
+- [ ] Create `ui/views/networks.lua`
+- [ ] Tree model with connected containers
+- [ ] Actions: expand/collapse + remove
+
+### Phase 15: LogLens Core Engine (performance-first)
 - [ ] Create `ui/loglens/init.lua`
-- [ ] Implement L to open logs
-- [ ] Stream with follow mode
-- [ ] Add filtering
-- [ ] Create parsers
+- [ ] Add source adapters: docker stdout/stderr + file tail
+- [ ] Add stream framer (newline + JSON entry boundaries)
+- [ ] Implement ring buffer + batched flush renderer
+- [ ] Implement follow mode + pause/freeze toggle
 
-### Phase 17: Auto-Refresh & Polish
+### Phase 16: LogLens Parsing, Formatting, Highlighting
+- [ ] Create `ui/loglens/parsers.lua` (`plain`, `json`, custom hook)
+- [ ] Create `ui/loglens/formatters.lua` (raw, compact, pretty)
+- [ ] Create `ui/loglens/highlighters.lua` (level, keyword, regex)
+- [ ] Per-container/per-source config rules in `config.lua`
+- [ ] Detail popup: parsed/raw toggle + copy/yank support
+
+### Phase 17: Auto-Refresh, Help, and UX Polish
 - [ ] **LEARN**: `vim.loop` timers
-- [ ] Implement refresh_interval
-- [ ] Add loading states
-- [ ] Error handling polish
+- [ ] Implement refresh interval lifecycle (start/stop on open/close)
+- [ ] Create `ui/popups/help.lua` and `?` overlay
+- [ ] Loading/empty/error states for each view
 
-### Phase 18: Commands & Health Check
+### Phase 18: Commands, Health Check, and Final Cleanup
 - [ ] Create `health.lua`
-- [ ] Add `:Dockyard`, `:DockyardFull` commands
-- [ ] Final cleanup
+- [ ] Validate Docker CLI/daemon availability
+- [ ] Verify all commands (`:Dockyard`, `:DockyardFull`, LogLens entrypoints)
+- [ ] Final refactor + docs sync
 
 ---
 
