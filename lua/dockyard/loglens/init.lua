@@ -1,21 +1,86 @@
 local state = require("dockyard.loglens.state")
 local renderer = require("dockyard.loglens.ui.renderer")
-local fake_data = require("dockyard.loglens.fake_data")
 local ui_state = require("dockyard.ui.state")
-local window = require("dockyard.loglens.ui.window")
 local keymaps = require("dockyard.loglens.keymaps")
+local loglens_config = require("dockyard.loglens.config")
+local parser_factory = require("dockyard.loglens.parsers")
+local stream = require("dockyard.loglens.parsers.stream")
+local window = require("dockyard.loglens.ui.window")
 
 local M = {}
 
----Set active container and refresh fake data state.
+local function stop_stream()
+	stream.stop(state.job_id)
+	state.job_id = nil
+end
+
+local function trim_entries()
+	while #state.entries > state.max_lines do
+		table.remove(state.entries, 1)
+	end
+end
+
+local function append_rows(rows)
+	for _, row in ipairs(rows or {}) do
+		table.insert(state.entries, row)
+	end
+	trim_entries()
+	renderer.render(state)
+end
+
+local function flush_parser_session()
+	if not state.parser_session then
+		return
+	end
+	local rows = state.parser_session:flush()
+	if #rows > 0 then
+		append_rows(rows)
+	end
+end
+
 ---@param container Container
-local function set_active_container(container)
+---@return number|nil
+local function setup_runtime(container)
+	local runtime, err = loglens_config.resolve_runtime(container)
+	if not runtime then
+		vim.notify("LogLens: " .. tostring(err), vim.log.levels.ERROR)
+		return nil
+	end
+
+	local session, parser_err = parser_factory.create_session(runtime.source)
+	if not session then
+		vim.notify("LogLens: " .. tostring(parser_err), vim.log.levels.ERROR)
+		return nil
+	end
+
 	state.container = container
-	state.container_name = container.name or "unknown"
-	state.follow = true
-	state.raw = false
-	state.entries = fake_data.generate(100)
+	state.container_name = loglens_config.normalize_container_name(container.name)
+	state.entries = {}
 	state.line_map = nil
+	state.active_source = runtime.source
+	state.max_lines = runtime.max_lines
+	state.parser_session = session
+
+	renderer.render(state)
+	return runtime.tail
+end
+
+local function start_container_stream(container, tail)
+	local source = state.active_source
+	local session = state.parser_session
+	if not source or not session then
+		return
+	end
+
+	stop_stream()
+	state.job_id = stream.start(container, source, tail, function(chunk)
+		local rows = session:push(chunk)
+		if #rows > 0 then
+			append_rows(rows)
+		end
+	end, function()
+		flush_parser_session()
+	end)
 end
 
 ---Open LogLens for a container.
@@ -38,21 +103,30 @@ function M.open(container)
 
 	local current_id = state.container and state.container.id or nil
 	if current_id ~= container.id then
-		set_active_container(container)
-		renderer.render(state)
+		flush_parser_session()
+		stop_stream()
+
+		local tail = setup_runtime(container)
+		if not tail then
+			return
+		end
+
+		start_container_stream(container, tail)
 	end
 
 	vim.api.nvim_set_current_win(state.win_id)
 end
 
 function M.close()
+	flush_parser_session()
+	stop_stream()
+
 	if state.win_id and vim.api.nvim_win_is_valid(state.win_id) then
 		pcall(vim.api.nvim_win_close, state.win_id, true)
 	end
 	if state.buf_id and vim.api.nvim_buf_is_valid(state.buf_id) then
 		pcall(vim.api.nvim_buf_delete, state.buf_id, { force = true })
 	end
-
 	state.reset()
 end
 

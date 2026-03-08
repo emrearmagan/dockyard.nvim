@@ -1,6 +1,7 @@
-local header = require("dockyard.loglens.ui.header")
-
 local M = {}
+
+local header = require("dockyard.loglens.ui.header")
+local table_renderer = require("dockyard.ui.components.table")
 
 ---@param state LogLensState
 ---@return boolean
@@ -11,21 +12,27 @@ local function is_valid_state(state)
 		and vim.api.nvim_win_is_valid(state.win_id)
 end
 
----@param state LogLensState
----@return string[]
----@return table
-local function build_lines(state)
-	---@type string[]
-	local lines = {}
-	---@type table
-	local line_map = {}
-
-	for _, entry in ipairs(state.entries or {}) do
-		table.insert(lines, entry)
-		table.insert(line_map, entry)
+---@param rows table[]
+---@return table[]
+local function infer_columns(rows)
+	local first = rows[1]
+	if type(first) ~= "table" then
+		return { { key = "message", name = "Message" } }
 	end
 
-	return lines, line_map
+	local cols = {}
+	for key, _ in pairs(first) do
+		table.insert(cols, { key = key, name = key:gsub("^%l", string.upper) })
+	end
+	table.sort(cols, function(a, b)
+		return tostring(a.key) < tostring(b.key)
+	end)
+
+	if #cols == 0 then
+		return { { key = "message", name = "Message" } }
+	end
+
+	return cols
 end
 
 ---@param state LogLensState
@@ -40,7 +47,14 @@ function M.render(state)
 	})
 	vim.api.nvim_set_option_value("winbar", winbar, { win = state.win_id })
 
-	local lines, line_map = build_lines(state)
+	local columns = infer_columns(state.entries)
+	local width = vim.api.nvim_win_get_width(state.win_id)
+	local lines, line_map = table_renderer.render({
+		columns = columns,
+		rows = state.entries,
+		width = width,
+		margin = 1,
+	})
 
 	vim.api.nvim_set_option_value("modifiable", true, { buf = state.buf_id })
 	vim.api.nvim_buf_set_lines(state.buf_id, 0, -1, false, lines)

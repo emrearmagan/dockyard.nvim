@@ -1,3 +1,7 @@
+---@class LogLensParserSession
+---@field push fun(self: LogLensParserSession, chunk: string): table[]
+---@field flush fun(self: LogLensParserSession): table[]
+
 ---@class LogLensStateData
 ---@field win_id number|nil
 ---@field buf_id number|nil
@@ -5,8 +9,12 @@
 ---@field container_name string|nil
 ---@field follow boolean
 ---@field raw boolean
----@field entries string[]
+---@field entries table[]
 ---@field line_map table|nil
+---@field job_id number|nil
+---@field active_source LogSource|nil
+---@field max_lines number
+---@field parser_session LogLensParserSession|nil
 
 ---@class LogLensState: LogLensStateData
 ---@field reset fun()
@@ -22,8 +30,14 @@ local M = {
 
 	follow = true,
 	raw = false,
+
 	entries = {},
 	line_map = nil,
+
+	job_id = nil,
+	active_source = nil,
+	max_lines = 2000,
+	parser_session = nil,
 }
 
 ---@cast M LogLensState
@@ -36,17 +50,19 @@ function M.reset()
 
 	M.follow = true
 	M.raw = false
+
 	M.entries = {}
 	M.line_map = nil
+
+	M.job_id = nil
+	M.active_source = nil
+	M.max_lines = 2000
+	M.parser_session = nil
 end
 
 ---@return boolean
 function M.is_open()
-	if not M.win_id then
-		return false
-	end
-
-	return vim.api.nvim_win_is_valid(M.win_id)
+	return M.win_id ~= nil and vim.api.nvim_win_is_valid(M.win_id)
 end
 
 ---@return boolean

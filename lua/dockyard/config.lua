@@ -3,20 +3,8 @@
 --- "file"   = read from a file inside the container
 
 --- @alias LogParserType "json"|"text"
---- "auto" = detect JSON automatically (line starts with { or [)
 --- "json" = always parse as JSON
 --- "text" = treat as plain text, no parsing
-
---- Maps your JSON keys to standard field names.
---- Different frameworks use different names:
----   Your app:    { level: "info", message: "...", timestamp: "..." }
----   Pino/Bunyan: { level: 30, msg: "...", time: 1234567890 }
----   Zap:         { level: "info", msg: "...", ts: 1234567890 }
----
---- @class LogFieldMapping
---- @field level? string     JSON key for log level (default: "level")
---- @field message? string   JSON key for message (default: "message")
---- @field timestamp? string JSON key for timestamp (default: "timestamp")
 
 --- A single highlight rule. Matches a Lua pattern and applies a color.
 --- Use EITHER 'group' (Neovim highlight group) OR 'color' (hex), not both.
@@ -38,23 +26,17 @@
 --- @field name? string                       Display name (auto-generated if omitted)
 --- @field type LogSourceType                 Where to get logs ("docker" or "file")
 --- @field path? string                       File path (required when type="file")
---- @field parser LogParserType|fun(line: string): table<string, any>|nil
---- @field fields? LogFieldMapping            JSON field mappings (for json parser)
+--- @field parser LogParserType               How to parse logs ("json" or "text")
 --- @field format? fun(entry: table): table<string, any>   User function to format the display row
 --- @field highlights? LogHighlightRule[]     Highlight rules for this source
 
 --- @class ContainerLogConfig
 --- @field sources? LogSource[]   Log sources for this container
---- @field max_lines? number      Override global max_lines
---- @field follow? boolean        Override global follow
---- @field tail? number           Override global tail
 
 --- @class LogLensConfig
---- @field max_lines? number                             Max lines in buffer (default: 2000)
---- @field follow? boolean                               Auto-scroll to new logs (default: true)
---- @field tail? number                                  Lines to fetch initially (default: 100)
 --- @field containers? table<string, ContainerLogConfig> Per-container configurations
 
+-- TODO: Currently not used
 --- @class DisplayConfig
 --- @field views string[] Order of tabs
 
@@ -70,9 +52,6 @@ M.options = {
 		views = { "containers", "images", "networks" },
 	},
 	loglens = {
-		max_lines = 2000,
-		follow = true,
-		tail = 100,
 		containers = {},
 	},
 }
