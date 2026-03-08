@@ -6,6 +6,7 @@ local M = {}
 local popup_win = nil
 local popup_buf = nil
 local ns = vim.api.nvim_create_namespace("dockyard.container_inspect")
+local resize_group = vim.api.nvim_create_augroup("DockyardContainerPopupResize", { clear = true })
 
 local function v(x)
 	if x == nil then
@@ -264,13 +265,39 @@ local function close_popup()
 	popup_win = nil
 end
 
-local function open_or_update_popup(buf, item)
+local function popup_layout()
 	local w = vim.o.columns
 	local h = vim.o.lines
 	local ww = math.max(math.floor(w * 0.62), 72)
 	local wh = math.max(math.floor(h * 0.8), 20)
 	local row = math.floor((h - wh) / 2)
 	local col = math.floor((w - ww) / 2)
+	return ww, wh, row, col
+end
+
+local function apply_popup_theme(win)
+	vim.api.nvim_set_option_value("winhighlight", "", { win = win })
+	vim.api.nvim_set_option_value("wrap", false, { win = win })
+	vim.api.nvim_set_option_value("cursorline", false, { win = win })
+end
+
+local function recenter_popup()
+	if popup_win == nil or not vim.api.nvim_win_is_valid(popup_win) then
+		return
+	end
+	local ww, wh, row, col = popup_layout()
+	vim.api.nvim_win_set_config(popup_win, {
+		relative = "editor",
+		width = ww,
+		height = wh,
+		row = row,
+		col = col,
+		zindex = 250,
+	})
+end
+
+local function open_or_update_popup(buf, item)
+	local ww, wh, row, col = popup_layout()
 
 	if popup_win ~= nil and vim.api.nvim_win_is_valid(popup_win) then
 		vim.api.nvim_win_set_config(popup_win, {
@@ -297,8 +324,7 @@ local function open_or_update_popup(buf, item)
 		})
 	end
 
-	vim.api.nvim_set_option_value("wrap", false, { win = popup_win })
-	vim.api.nvim_set_option_value("cursorline", false, { win = popup_win })
+	apply_popup_theme(popup_win)
 end
 
 function M.open(item)
@@ -332,5 +358,12 @@ function M.open(item)
 		vim.keymap.set("n", "<Esc>", close_popup, opts)
 	end)
 end
+
+vim.api.nvim_create_autocmd("VimResized", {
+	group = resize_group,
+	callback = function()
+		recenter_popup()
+	end,
+})
 
 return M
