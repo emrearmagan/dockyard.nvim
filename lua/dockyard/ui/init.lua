@@ -1,5 +1,6 @@
 local M = {}
 local state = require("dockyard.ui.state")
+local data_state = require("dockyard.state")
 local renderer = require("dockyard.ui.renderer")
 
 local win_config_by_mode = {}
@@ -21,8 +22,7 @@ local function panel_win_config()
 		col = col,
 		style = "minimal",
 		border = "rounded",
-		zindex = 250,
-		noautocmd = true,
+		zindex = 100,
 	}
 end
 
@@ -35,8 +35,7 @@ local function full_win_config()
 		col = 0,
 		style = "minimal",
 		border = "none",
-		zindex = 250,
-		noautocmd = true,
+		zindex = 100,
 	}
 end
 
@@ -60,7 +59,6 @@ local function apply_win_config(win, mode)
 	vim.api.nvim_win_set_option(win, "signcolumn", "no")
 	vim.api.nvim_win_set_option(win, "wrap", false)
 	vim.api.nvim_win_set_option(win, "cursorline", true)
-	vim.api.nvim_win_set_option(win, "winblend", 0)
 
 	if mode == "full" then
 		vim.api.nvim_win_set_option(
@@ -94,6 +92,20 @@ local function open_with(mode, win_config_fn)
 	state.win_id = vim.api.nvim_open_win(state.buf_id, true, win_config_fn())
 	apply_win_config(state.win_id, mode)
 	renderer.render()
+
+	data_state.containers.refresh({
+		silent = true,
+		on_success = function()
+			if M.is_open() then
+				renderer.render()
+			end
+		end,
+		on_error = function()
+			if M.is_open() then
+				renderer.render()
+			end
+		end,
+	})
 
 	return state.win_id
 end

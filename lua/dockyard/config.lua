@@ -37,8 +37,17 @@ local function setup_keymaps()
 	-- Ensure we replace any stale command handlers from previous reloads.
 	pcall(vim.api.nvim_del_user_command, "Dockyard")
 	pcall(vim.api.nvim_del_user_command, "DockyardFull")
+	pcall(vim.api.nvim_del_user_command, "DockyardToggle")
 
 	vim.api.nvim_create_user_command("Dockyard", function()
+		require("dockyard.ui").open()
+	end, { desc = "Open Dockyard UI" })
+
+	vim.api.nvim_create_user_command("DockyardFull", function()
+		require("dockyard.ui").open_full()
+	end, { desc = "Open Dockyard Fullscreen" })
+
+	vim.api.nvim_create_user_command("DockyardToggle", function()
 		local ui = require("dockyard.ui")
 		if ui.is_open() then
 			ui.close()
@@ -46,15 +55,6 @@ local function setup_keymaps()
 			ui.open()
 		end
 	end, { desc = "Toggle Dockyard UI" })
-
-	vim.api.nvim_create_user_command("DockyardFull", function()
-		local ui = require("dockyard.ui")
-		if ui.is_open() then
-			ui.close()
-		else
-			ui.open_full()
-		end
-	end, { desc = "Toggle Dockyard Fullscreen" })
 end
 
 ---@param opts? DockyardConfig
