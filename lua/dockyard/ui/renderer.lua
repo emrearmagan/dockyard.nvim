@@ -8,6 +8,7 @@ local navbar = require("dockyard.ui.components.navbar")
 local containers_view = require("dockyard.ui.views.containers")
 local images_view = require("dockyard.ui.views.images")
 local networks_view = require("dockyard.ui.views.networks")
+local navigation = require("dockyard.ui.navigation")
 
 local ns = vim.api.nvim_create_namespace("dockyard.ui")
 
@@ -148,6 +149,7 @@ function M.render()
 	vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	apply_spans(buf, spans)
+	navigation.first()
 	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 end
 
