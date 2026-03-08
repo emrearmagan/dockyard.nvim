@@ -45,7 +45,7 @@ local function open_with(mode, win_config_fn)
 		next_view = M.next_view,
 		prev_view = M.prev_view,
 		open_help = function()
-			vim.cmd("help dockyard")
+			require("dockyard.ui.popups.help").open()
 		end,
 	})
 	register_view_keymaps()

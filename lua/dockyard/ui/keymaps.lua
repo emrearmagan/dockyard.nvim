@@ -45,6 +45,10 @@ function M.register_global(buf, handlers)
 	vim.keymap.set("n", "<S-Tab>", function()
 		M._handlers.prev_view()
 	end, opts)
+
+	vim.keymap.set("n", "?", function()
+		M._handlers.open_help()
+	end, opts)
 end
 
 function M.unregister_global(buf)

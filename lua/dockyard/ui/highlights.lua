@@ -32,6 +32,7 @@ local groups = {
 	DockyardAction = { fg = palette.fg },
 	DockyardActionRefresh = { bg = palette.green, fg = "#1e1e2e", bold = true },
 	DockyardActionHelp = { bg = palette.orange, fg = "#1e1e2e", bold = true },
+	DockyardHelpKey = { fg = palette.orange, bold = true },
 	DockyardColumnHeader = { fg = palette.column_header, bold = true },
 	DockyardName = { fg = palette.blue },
 	DockyardImage = { fg = palette.mauve },
