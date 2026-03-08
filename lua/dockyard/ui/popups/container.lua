@@ -1,12 +1,14 @@
 local docker = require("dockyard.docker")
 local highlights = require("dockyard.ui.highlights")
+local table_view = require("dockyard.ui.components.table")
+local generic_popup = require("dockyard.ui.popups.popup")
 
 local M = {}
 
-local popup_win = nil
-local popup_buf = nil
-local ns = vim.api.nvim_create_namespace("dockyard.container_inspect")
-local resize_group = vim.api.nvim_create_augroup("DockyardContainerPopupResize", { clear = true })
+local last_data = nil
+local last_stats = nil
+local last_item = nil
+local popup = nil
 
 local function v(x)
 	if x == nil then
@@ -47,27 +49,12 @@ local function join_list(items)
 	return table.concat(out, ", ")
 end
 
-local function render_row(lines, spans, row)
-	local label = tostring(row.label) .. ":"
-	local width = row.width or 18
-	local label_part = string.format("  %-" .. width .. "s ", label)
-	local value_part = v(row.value)
-	local text = label_part .. value_part
-	local lnum = #lines
-	table.insert(lines, text)
-
-	table.insert(spans, {
-		line = lnum,
-		start_col = 2,
-		end_col = 2 + #label,
-		hl_group = row.label_hl or "DockyardColumnHeader",
-	})
-	table.insert(spans, {
-		line = lnum,
-		start_col = #label_part,
-		end_col = #text,
-		hl_group = row.value_hl or "DockyardName",
-	})
+local function is_empty_value(x)
+	if x == nil then
+		return true
+	end
+	local s = tostring(x)
+	return s == "" or s == "-"
 end
 
 local function render_section(lines, spans, title)
@@ -82,13 +69,71 @@ local function render_section(lines, spans, title)
 	table.insert(lines, "")
 end
 
-local function render_rows(lines, spans, rows)
-	for _, row in ipairs(rows) do
-		render_row(lines, spans, row)
+local function append_table_rows(lines, spans, rows, width)
+	local function to_table_row(row)
+		local out = {
+			field = tostring(row.label or "") .. ":",
+			value = v(row.value),
+			_label_hl = row.label_hl or "DockyardColumnHeader",
+			_value_hl = row.value_hl or "DockyardName",
+			_expanded = row._expanded,
+		}
+
+		if type(row.children) == "table" and #row.children > 0 then
+			out.children = {}
+			for _, child in ipairs(row.children) do
+				table.insert(out.children, to_table_row(child))
+			end
+		end
+
+		return out
+	end
+
+	local table_rows = {}
+	for _, row in ipairs(rows or {}) do
+		table.insert(table_rows, to_table_row(row))
+	end
+
+	local block_lines, _, block_spans = table_view.render({
+		columns = {
+			{ key = "field", name = "", width = 24, gap_after = 2 },
+			{ key = "value", name = "", min_width = 20, grow_last = true },
+		},
+		rows = table_rows,
+		width = width,
+		margin = 0,
+		right_margin = 0,
+		cell_hl = function(row, column)
+			if column.key == "field" then
+				return row._label_hl
+			end
+			return row._value_hl
+		end,
+		tree = {
+			expanded_field = "_expanded",
+			default_expanded = true,
+			show_indicator = false,
+		},
+	})
+
+	local base = #lines
+	for i = 3, #block_lines do
+		table.insert(lines, block_lines[i])
+	end
+
+	for _, span in ipairs(block_spans or {}) do
+		if span.line >= 2 then
+			table.insert(spans, {
+				line = base + (span.line - 2),
+				start_col = span.start_col,
+				end_col = span.end_col,
+				hl_group = span.hl_group,
+			})
+		end
 	end
 end
 
-local function build_rows(data)
+local function build_rows(data, stats)
 	local rows = {}
 	local state = data.State or {}
 	local config = data.Config or {}
@@ -103,10 +148,26 @@ local function build_rows(data)
 		{ label = "Created", value = ts(data.Created), value_hl = "DockyardMuted" },
 		{ label = "Started", value = ts(state.StartedAt), value_hl = "DockyardMuted" },
 		{ label = "Exit Code", value = state.ExitCode, value_hl = "DockyardPorts" },
-		{ label = "Restart Count", value = state.RestartCount, value_hl = "DockyardMuted" },
 		{ label = "Health", value = (state.Health or {}).Status, value_hl = "DockyardName" },
 		{ label = "Restart Policy", value = (host.RestartPolicy or {}).Name, value_hl = "DockyardMuted" },
 	}
+
+	if not is_empty_value(state.RestartCount) then
+		table.insert(
+			rows.header,
+			8,
+			{ label = "Restart Count", value = state.RestartCount, value_hl = "DockyardMuted" }
+		)
+	end
+
+	if type(stats) == "table" then
+		table.insert(rows.header, { label = "CPU", value = stats.cpu_perc, value_hl = "DockyardPorts" })
+		table.insert(rows.header, { label = "Memory", value = stats.mem_usage, value_hl = "DockyardPorts" })
+		table.insert(rows.header, { label = "Memory %", value = stats.mem_perc, value_hl = "DockyardPorts" })
+		table.insert(rows.header, { label = "PIDs", value = stats.pids, value_hl = "DockyardMuted" })
+		table.insert(rows.header, { label = "Net IO", value = stats.net_io, value_hl = "DockyardMuted" })
+		table.insert(rows.header, { label = "Block IO", value = stats.block_io, value_hl = "DockyardMuted" })
+	end
 
 	rows.network = {}
 	local networks = (data.NetworkSettings or {}).Networks or {}
@@ -116,50 +177,57 @@ local function build_rows(data)
 	else
 		for _, name in ipairs(network_names) do
 			local net = networks[name] or {}
-			table.insert(rows.network, { label = "Network", value = name, value_hl = "DockyardImage" })
-			table.insert(
-				rows.network,
-				{ label = "  IP Address", value = net.IPAddress, label_hl = "DockyardMuted", value_hl = "DockyardPorts" }
-			)
-			table.insert(
-				rows.network,
-				{ label = "  Gateway", value = net.Gateway, label_hl = "DockyardMuted", value_hl = "DockyardMuted" }
-			)
+			table.insert(rows.network, {
+				label = "Network",
+				value = name,
+				value_hl = "DockyardImage",
+				_expanded = true,
+				children = {
+					{
+						label = "IP Address",
+						value = net.IPAddress,
+						label_hl = "DockyardMuted",
+						value_hl = "DockyardPorts",
+					},
+					{ label = "Gateway", value = net.Gateway, label_hl = "DockyardMuted", value_hl = "DockyardMuted" },
+				},
+			})
 		end
 	end
 
 	local ports = (data.NetworkSettings or {}).Ports or {}
 	local port_keys = keys(ports)
 	if #port_keys > 0 then
-		table.insert(rows.network, { label = "Ports", value = "" })
+		local port_children = {}
 		for _, port in ipairs(port_keys) do
 			local mapping = ports[port]
 			if mapping == vim.NIL or mapping == nil then
-				table.insert(
-					rows.network,
-					{
-						label = "  " .. port,
-						value = "not published",
-						label_hl = "DockyardMuted",
-						value_hl = "DockyardMuted",
-					}
-				)
+				table.insert(port_children, {
+					label = port,
+					value = "not published",
+					label_hl = "DockyardMuted",
+					value_hl = "DockyardMuted",
+				})
 			elseif type(mapping) == "table" then
 				local parts = {}
 				for _, m in ipairs(mapping) do
 					table.insert(parts, v(m.HostIp) .. ":" .. v(m.HostPort))
 				end
-				table.insert(
-					rows.network,
-					{
-						label = "  " .. port,
-						value = table.concat(parts, ", "),
-						label_hl = "DockyardMuted",
-						value_hl = "DockyardPorts",
-					}
-				)
+				table.insert(port_children, {
+					label = port,
+					value = table.concat(parts, ", "),
+					label_hl = "DockyardMuted",
+					value_hl = "DockyardPorts",
+				})
 			end
 		end
+
+		table.insert(rows.network, {
+			label = "Ports",
+			value = "",
+			_expanded = true,
+			children = port_children,
+		})
 	end
 
 	rows.storage = {}
@@ -187,16 +255,22 @@ local function build_rows(data)
 
 	local env = config.Env or {}
 	if #env > 0 then
-		table.insert(rows.config, { label = "Environment", value = "" })
+		local env_children = {}
 		for _, e in ipairs(env) do
 			local k, val = tostring(e):match("([^=]+)=(.*)")
 			if k then
 				table.insert(
-					rows.config,
-					{ label = "  " .. k, value = val, label_hl = "DockyardMuted", value_hl = "DockyardName" }
+					env_children,
+					{ label = k, value = val, label_hl = "DockyardMuted", value_hl = "DockyardName" }
 				)
 			end
 		end
+		table.insert(rows.config, {
+			label = "Environment",
+			value = "",
+			_expanded = true,
+			children = env_children,
+		})
 	end
 
 	rows.labels = {}
@@ -205,127 +279,95 @@ local function build_rows(data)
 	if #label_keys == 0 then
 		table.insert(rows.labels, { label = "Labels", value = "-", value_hl = "DockyardMuted" })
 	else
+		local label_children = {}
 		for _, k in ipairs(label_keys) do
 			table.insert(
-				rows.labels,
+				label_children,
 				{ label = k, value = labels[k], label_hl = "DockyardMuted", value_hl = "DockyardName" }
 			)
 		end
+		table.insert(rows.labels, {
+			label = "Labels",
+			value = string.format("%d items", #label_children),
+			value_hl = "DockyardMuted",
+			_expanded = true,
+			children = label_children,
+		})
 	end
 
 	return rows
 end
 
-local function render_container(data)
+local function render_container(data, stats, width)
 	local lines = {}
 	local spans = {}
-	local rows = build_rows(data)
+	local rows = build_rows(data, stats)
 
-	render_rows(lines, spans, rows.header)
+	append_table_rows(lines, spans, rows.header, width)
 	render_section(lines, spans, "NETWORK")
-	render_rows(lines, spans, rows.network)
+	append_table_rows(lines, spans, rows.network, width)
 	render_section(lines, spans, "STORAGE")
-	render_rows(lines, spans, rows.storage)
+	append_table_rows(lines, spans, rows.storage, width)
 	render_section(lines, spans, "CONFIG")
-	render_rows(lines, spans, rows.config)
+	append_table_rows(lines, spans, rows.config, width)
 	render_section(lines, spans, "LABELS")
-	render_rows(lines, spans, rows.labels)
+	append_table_rows(lines, spans, rows.labels, width)
 
 	return lines, spans
 end
 
-local function ensure_popup_buf()
-	if popup_buf ~= nil and vim.api.nvim_buf_is_valid(popup_buf) then
-		return popup_buf
-	end
-
-	popup_buf = vim.api.nvim_create_buf(false, true)
-	vim.api.nvim_set_option_value("buftype", "nofile", { buf = popup_buf })
-	vim.api.nvim_set_option_value("bufhidden", "wipe", { buf = popup_buf })
-	vim.api.nvim_set_option_value("swapfile", false, { buf = popup_buf })
-	vim.api.nvim_set_option_value("filetype", "dockyard_inspect", { buf = popup_buf })
-	vim.api.nvim_set_option_value("modifiable", false, { buf = popup_buf })
-
-	vim.api.nvim_create_autocmd("BufWipeout", {
-		buffer = popup_buf,
-		once = true,
-		callback = function()
-			popup_buf = nil
-			popup_win = nil
-		end,
-	})
-
-	return popup_buf
+local function reset_cached_data()
+	last_data = nil
+	last_stats = nil
+	last_item = nil
 end
 
-local function close_popup()
-	if popup_win ~= nil and vim.api.nvim_win_is_valid(popup_win) then
-		vim.api.nvim_win_close(popup_win, true)
-	end
-	popup_win = nil
-end
-
-local function popup_layout()
-	local w = vim.o.columns
-	local h = vim.o.lines
-	local ww = math.max(math.floor(w * 0.62), 72)
-	local wh = math.max(math.floor(h * 0.8), 20)
-	local row = math.floor((h - wh) / 2)
-	local col = math.floor((w - ww) / 2)
-	return ww, wh, row, col
-end
-
-local function apply_popup_theme(win)
-	vim.api.nvim_set_option_value("winhighlight", "", { win = win })
-	vim.api.nvim_set_option_value("wrap", false, { win = win })
-	vim.api.nvim_set_option_value("cursorline", false, { win = win })
-end
-
-local function recenter_popup()
-	if popup_win == nil or not vim.api.nvim_win_is_valid(popup_win) then
+local function render_popup_content()
+	if last_data == nil or popup == nil then
 		return
 	end
-	local ww, wh, row, col = popup_layout()
-	vim.api.nvim_win_set_config(popup_win, {
-		relative = "editor",
-		width = ww,
-		height = wh,
-		row = row,
-		col = col,
-		zindex = 250,
-	})
+	local width = popup.get_width()
+	local lines, spans = render_container(last_data, last_stats, width)
+	popup.set_content(lines, spans)
 end
 
-local function open_or_update_popup(buf, item)
-	local ww, wh, row, col = popup_layout()
-
-	if popup_win ~= nil and vim.api.nvim_win_is_valid(popup_win) then
-		vim.api.nvim_win_set_config(popup_win, {
-			relative = "editor",
-			width = ww,
-			height = wh,
-			row = row,
-			col = col,
-			zindex = 250,
-		})
-		vim.api.nvim_set_current_win(popup_win)
-	else
-		popup_win = vim.api.nvim_open_win(buf, true, {
-			relative = "editor",
-			width = ww,
-			height = wh,
-			row = row,
-			col = col,
-			style = "minimal",
-			border = "rounded",
-			title = " Inspect: " .. v(item.name or item.id) .. " ",
-			title_pos = "center",
-			zindex = 250,
-		})
+local function refresh_popup_data()
+	if last_item == nil or last_item.id == nil then
+		return
 	end
 
-	apply_popup_theme(popup_win)
+	docker.inspect("container", last_item.id, function(res)
+		if not res.ok then
+			vim.notify("Inspect failed: " .. tostring(res.error), vim.log.levels.ERROR)
+			return
+		end
+
+		last_data = res.data or {}
+		last_stats = nil
+		render_popup_content()
+
+		docker.container_stats(last_item.id, function(stats_res)
+			if not stats_res.ok or popup == nil or not popup.is_open() then
+				return
+			end
+			if last_data == nil or last_item == nil then
+				return
+			end
+
+			last_stats = stats_res.data or {}
+			render_popup_content()
+		end)
+	end)
 end
+
+popup = generic_popup.create({
+	title = " Inspect ",
+	view = "container",
+	on_resize = function()
+		render_popup_content()
+	end,
+	on_close = reset_cached_data,
+})
 
 function M.open(item)
 	if not item or not item.id then
@@ -333,37 +375,19 @@ function M.open(item)
 		return
 	end
 
-	docker.inspect("container", item.id, function(res)
-		if not res.ok then
-			vim.notify("Inspect failed: " .. tostring(res.error), vim.log.levels.ERROR)
-			return
-		end
+	last_item = item
+	local _, buf = popup.open({
+		title = " Inspect: " .. v(item.name or item.id) .. " ",
+		footer = " Refresh (r) ",
+		view = "container",
+	})
 
-		local buf = ensure_popup_buf()
-		local lines, spans = render_container(res.data or {})
+	local opts = { buffer = buf, nowait = true, silent = true }
+	vim.keymap.set("n", "r", function()
+		refresh_popup_data()
+	end, opts)
 
-		vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
-		vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-		vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
-		vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
-
-		for _, span in ipairs(spans) do
-			vim.api.nvim_buf_add_highlight(buf, ns, span.hl_group, span.line, span.start_col, span.end_col)
-		end
-
-		open_or_update_popup(buf, item)
-
-		local opts = { buffer = buf, nowait = true, silent = true }
-		vim.keymap.set("n", "q", close_popup, opts)
-		vim.keymap.set("n", "<Esc>", close_popup, opts)
-	end)
+	refresh_popup_data()
 end
-
-vim.api.nvim_create_autocmd("VimResized", {
-	group = resize_group,
-	callback = function()
-		recenter_popup()
-	end,
-})
 
 return M

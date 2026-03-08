@@ -186,6 +186,50 @@ M.container_action = function(container_id, action, callback)
 	end)
 end
 
+--- @class ContainerStats
+--- @field cpu_perc string
+--- @field mem_usage string
+--- @field mem_perc string
+--- @field net_io string
+--- @field block_io string
+--- @field pids string
+
+--- @param container_id string
+--- @param callback fun(result: {ok: boolean, data?: ContainerStats, error?: string})
+M.container_stats = function(container_id, callback)
+	local format = table.concat({
+		"{",
+		'  "cpu_perc": {{json .CPUPerc}},',
+		'  "mem_usage": {{json .MemUsage}},',
+		'  "mem_perc": {{json .MemPerc}},',
+		'  "net_io": {{json .NetIO}},',
+		'  "block_io": {{json .BlockIO}},',
+		'  "pids": {{json .PIDs}}',
+		"}",
+	}, "")
+
+	run_docker_command({ "stats", "--no-stream", "--format", format, container_id }, function(result)
+		if not result.ok then
+			callback(result)
+			return
+		end
+
+		local line = result.data:match("[^\r\n]+")
+		if line == nil or line == "" then
+			callback({ ok = false, error = "No stats output" })
+			return
+		end
+
+		local ok, parsed = pcall(vim.json.decode, line)
+		if not ok or parsed == nil then
+			callback({ ok = false, error = "Failed to parse stats data" })
+			return
+		end
+
+		callback({ ok = true, data = parsed })
+	end)
+end
+
 --- @param type "container"|"image"|"network"
 --- @param id string
 --- @param callback fun(result: {ok: boolean, data?: table, error?: string})
