@@ -9,6 +9,7 @@ This version is explicit: every step shows exactly what file to edit and the cod
 - no highlighting logic
 - no `auto` parser
 - no custom parser function
+- user config stays minimal: no `max_lines`, no `tail`, no `follow`
 
 ---
 
@@ -30,7 +31,6 @@ This version is explicit: every step shows exactly what file to edit and the cod
 ---@field follow boolean
 ---@field raw boolean
 ---@field entries table[]
----@field columns table[]
 ---@field line_map table|nil
 ---@field job_id number|nil
 ---@field active_source LogSource|nil
@@ -53,7 +53,6 @@ local M = {
 	raw = false,
 
 	entries = {},
-	columns = {},
 	line_map = nil,
 
 	job_id = nil,
@@ -74,7 +73,6 @@ function M.reset()
 	M.raw = false
 
 	M.entries = {}
-	M.columns = {}
 	M.line_map = nil
 
 	M.job_id = nil
@@ -109,12 +107,13 @@ Why: state now stores table rows + parser/stream runtime.
 local dockyard_config = require("dockyard.config")
 
 local M = {}
+local DEFAULT_MAX_LINES = 2000
+local DEFAULT_TAIL = 100
 
 ---@class LogLensRuntime
 ---@field source LogSource
 ---@field max_lines number
 ---@field tail number
----@field columns table[]
 
 ---@param name string|nil
 ---@return string
@@ -149,38 +148,19 @@ function M.validate_source(source)
 	if type(source.format) ~= "function" then
 		return false, "source.format(entry) is required"
 	end
-	if type(source.columns) ~= "table" or #source.columns == 0 then
-		return false, "source.columns is required"
-	end
 	return true, nil
 end
 
 ---@param container Container
 ---@return number
 local function resolve_max_lines(container)
-	local opts = dockyard_config.options.loglens or {}
-	local cfg = M.get_container_config(M.normalize_container_name(container.name))
-	if cfg and type(cfg.max_lines) == "number" then
-		return cfg.max_lines
-	end
-	if type(opts.max_lines) == "number" then
-		return opts.max_lines
-	end
-	return 2000
+	return DEFAULT_MAX_LINES
 end
 
 ---@param container Container
 ---@return number
 local function resolve_tail(container)
-	local opts = dockyard_config.options.loglens or {}
-	local cfg = M.get_container_config(M.normalize_container_name(container.name))
-	if cfg and type(cfg.tail) == "number" then
-		return cfg.tail
-	end
-	if type(opts.tail) == "number" then
-		return opts.tail
-	end
-	return 100
+	return DEFAULT_TAIL
 end
 
 ---@param container Container
@@ -203,7 +183,6 @@ function M.resolve_runtime(container)
 		source = source,
 		max_lines = resolve_max_lines(container),
 		tail = resolve_tail(container),
-		columns = source.columns,
 	}, nil
 end
 
@@ -211,6 +190,9 @@ return M
 ```
 
 Why: one place to resolve/validate source contract.
+
+Note: `max_lines` and `tail` in this phase are internal defaults (`DEFAULT_MAX_LINES`, `DEFAULT_TAIL`).
+They are not part of user plugin config.
 
 ---
 
@@ -492,6 +474,29 @@ local table_renderer = require("dockyard.ui.components.table")
 
 local M = {}
 
+---@param rows table[]
+---@return table[]
+local function infer_columns(rows)
+	local first = rows[1]
+	if type(first) ~= "table" then
+		return { { key = "message", name = "Message" } }
+	end
+
+	local cols = {}
+	for key, _ in pairs(first) do
+		table.insert(cols, { key = key, name = key:gsub("^%l", string.upper) })
+	end
+	table.sort(cols, function(a, b)
+		return tostring(a.key) < tostring(b.key)
+	end)
+
+	if #cols == 0 then
+		return { { key = "message", name = "Message" } }
+	end
+
+	return cols
+end
+
 ---@param state LogLensState
 ---@return boolean
 local function is_valid_state(state)
@@ -511,9 +516,10 @@ function M.render(state)
 	})
 	vim.api.nvim_set_option_value("winbar", winbar, { win = state.win_id })
 
+	local columns = infer_columns(state.entries)
 	local width = vim.api.nvim_win_get_width(state.win_id)
 	local lines, line_map = table_renderer.render({
-		columns = state.columns,
+		columns = columns,
 		rows = state.entries,
 		width = width,
 		margin = 1,
@@ -530,7 +536,7 @@ end
 return M
 ```
 
-Why: rows + columns come from config/parser pipeline.
+Why: rows come from parsers, columns are inferred internally from row keys.
 
 ---
 
@@ -599,7 +605,6 @@ local function setup_runtime(container)
 	state.container = container
 	state.container_name = loglens_config.normalize_container_name(container.name)
 	state.entries = {}
-	state.columns = runtime.columns
 	state.line_map = nil
 	state.active_source = runtime.source
 	state.max_lines = runtime.max_lines
@@ -668,11 +673,6 @@ loglens = {
 					type = "file",
 					path = "/var/log/backend.json",
 					parser = "json",
-					columns = {
-						{ key = "time", name = "Time", width = 8 },
-						{ key = "level", name = "Level", width = 8 },
-						{ key = "message", name = "Message" },
-					},
 					format = function(entry)
 						local ts = entry.timestamp and entry.timestamp:sub(12, 19) or "--:--:--"
 						local lvl = (entry.level or "info"):upper()
@@ -695,7 +695,6 @@ loglens = {
 
 1. `state.entries` contains row tables
 2. `format(entry)` returns row tables
-3. `columns` are defined in source config
-4. parser session emits rows (not strings)
-5. renderer uses table renderer with `state.columns`
-6. stream switch/close properly flushes + stops
+3. parser session emits rows (not strings)
+4. renderer uses table renderer with inferred columns
+5. stream switch/close properly flushes + stops
