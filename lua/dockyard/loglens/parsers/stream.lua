@@ -5,7 +5,7 @@ local M = {}
 ---@param tail number
 ---@return string[]
 local function build_command(container, source, tail)
-	if source.type == "file" then
+	if source.path and source.path ~= "" then
 		return { "docker", "exec", container.id, "tail", "-n", tostring(tail), "-f", source.path }
 	end
 

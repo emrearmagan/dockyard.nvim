@@ -54,6 +54,18 @@ local function infer_columns(rows, order)
 	return cols
 end
 
+---@param entries LogLensEntry[]
+---@return table[]
+local function to_rows(entries)
+	local rows = {}
+	for _, item in ipairs(entries or {}) do
+		if type(item) == "table" and type(item.data) == "table" then
+			table.insert(rows, item.data)
+		end
+	end
+	return rows
+end
+
 ---@param state LogLensState
 function M.render(state)
 	if not is_valid_state(state) then
@@ -67,7 +79,8 @@ function M.render(state)
 	vim.api.nvim_set_option_value("winbar", winbar, { win = state.win_id })
 
 	local source = state.active_source or {}
-	local columns = infer_columns(state.entries, source._order)
+	local rows = to_rows(state.entries)
+	local columns = infer_columns(rows, source._order)
 	if #columns == 0 then
 		vim.api.nvim_set_option_value("modifiable", true, { buf = state.buf_id })
 		vim.api.nvim_buf_set_lines(state.buf_id, 0, -1, false, {})
@@ -79,7 +92,7 @@ function M.render(state)
 	local width = vim.api.nvim_win_get_width(state.win_id)
 	local lines, line_map = table_renderer.render({
 		columns = columns,
-		rows = state.entries,
+		rows = rows,
 		width = width,
 		margin = 1,
 		fill = false,

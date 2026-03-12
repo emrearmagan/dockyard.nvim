@@ -1,6 +1,10 @@
+---@class LogLensEntry
+---@field raw string
+---@field data table<string, any>
+
 ---@class LogLensParserSession
----@field push fun(self: LogLensParserSession, chunk: string): table[]
----@field flush fun(self: LogLensParserSession): table[]
+---@field push fun(self: LogLensParserSession, chunk: string): LogLensEntry[]
+---@field flush fun(self: LogLensParserSession): LogLensEntry[]
 
 ---@class LogLensStateData
 ---@field win_id number|nil
@@ -9,7 +13,7 @@
 ---@field container_name string|nil
 ---@field follow boolean
 ---@field raw boolean
----@field entries table[]
+---@field entries LogLensEntry[]
 ---@field line_map table|nil
 ---@field job_id number|nil
 ---@field active_source LogSource|nil

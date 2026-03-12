@@ -1,15 +1,17 @@
 local M = {}
 
 ---@param source LogSource
----@param entry table
----@return table|nil
-local function format_row(source, entry)
-	local ok, row = pcall(source.format, entry)
+---@param raw string
+---@return LogLensEntry|nil
+local function format_row(source, raw)
+	local ok, row = pcall(source.format, raw)
 	if not ok or type(row) ~= "table" then
 		return nil
 	end
-
-	return row
+	return {
+		raw = raw,
+		data = row,
+	}
 end
 
 ---@param source LogSource
@@ -17,7 +19,6 @@ end
 function M.create(source)
 	local pending = ""
 
-	---@type LogLensParserSession
 	local session = {}
 
 	---@param chunk string
@@ -32,11 +33,12 @@ function M.create(source)
 			end
 			local line = pending:sub(1, idx - 1)
 			pending = pending:sub(idx + 1)
-			local row = format_row(source, { message = line })
+			local row = format_row(source, line)
 			if row then
 				table.insert(rows, row)
 			end
 		end
+
 		return rows
 	end
 
@@ -47,13 +49,14 @@ function M.create(source)
 		end
 		local line = pending
 		pending = ""
-		local row = format_row(source, { raw = line, message = line })
+		local row = format_row(source, line)
 		if row then
 			return { row }
 		end
 		return {}
 	end
 
+	---@cast session LogLensParserSession
 	return session
 end
 

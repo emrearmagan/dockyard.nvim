@@ -1,42 +1,33 @@
 local M = {}
 
 ---@param source LogSource
----@return LogFieldMapping
-local function fields(source)
-	return source.fields or { level = "level", message = "message", timestamp = "timestamp" }
-end
-
----@param source LogSource
 ---@param raw string
----@return table|nil
+---@return LogLensEntry|nil
 local function parse_and_format(source, raw)
 	local ok, decoded = pcall(vim.json.decode, raw)
 	if not ok or type(decoded) ~= "table" then
 		return nil
 	end
 
-	local entry = {
-		raw = raw,
-		data = decoded,
-	}
-
-	local ok_fmt, row = pcall(source.format, entry.data)
+	local ok_fmt, row = pcall(source.format, decoded)
 	if not ok_fmt or type(row) ~= "table" then
 		return nil
 	end
 
-	return row
+	return {
+		raw = raw,
+		data = row,
+	}
 end
 
 ---@param source LogSource
 ---@return LogLensParserSession
 function M.create(source)
 	local buffer = ""
-	---@type LogLensParserSession
 	local session = {}
 
 	---@param chunk string
-	---@return table[]
+	---@return LogLensEntry[]
 	function session:push(chunk)
 		buffer = buffer .. chunk .. "\n"
 		local rows = {}
@@ -86,7 +77,7 @@ function M.create(source)
 		return rows
 	end
 
-	---@return table[]
+	---@return LogLensEntry[]
 	function session:flush()
 		local trimmed = buffer:gsub("^%s+", ""):gsub("%s+$", "")
 		buffer = ""
@@ -100,6 +91,7 @@ function M.create(source)
 		return {}
 	end
 
+	---@cast session LogLensParserSession
 	return session
 end
 

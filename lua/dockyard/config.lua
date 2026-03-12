@@ -1,7 +1,3 @@
---- @alias LogSourceType "docker"|"file"
---- "docker" = fetch from `docker logs` command (stdout/stderr)
---- "file"   = read from a file inside the container
-
 --- @alias LogParserType "json"|"text"
 --- "json" = always parse as JSON
 --- "text" = treat as plain text, no parsing
@@ -24,8 +20,7 @@
 ---
 --- @class LogSource
 --- @field name? string                       Display name (auto-generated if omitted)
---- @field type LogSourceType                 Where to get logs ("docker" or "file")
---- @field path? string                       File path (required when type="file")
+--- @field path? string                       If set, logs are read from this file in container
 --- @field parser LogParserType               How to parse logs ("json" or "text")
 --- @field _order? string[]                   Optional column key order (e.g. {"time","level","message"})
 --- @field format? fun(entry: table): table<string, any>   User function to format the display row

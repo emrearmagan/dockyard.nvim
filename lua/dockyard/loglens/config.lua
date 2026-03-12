@@ -29,8 +29,12 @@ function M.get_container_config(container_name)
 				type = "docker",
 				parser = "text",
 				format = function(entry)
+					if entry == "" then
+						return nil
+					end
+
 					return {
-						logs = entry.message,
+						logs = entry,
 					}
 				end,
 			},
@@ -44,12 +48,6 @@ end
 function M.validate_source(source)
 	if not source then
 		return false, "Missing source config"
-	end
-	if source.type ~= "docker" and source.type ~= "file" then
-		return false, "source.type must be 'docker' or 'file'"
-	end
-	if source.type == "file" and not source.path then
-		return false, "file source needs source.path"
 	end
 	if source.parser ~= "text" and source.parser ~= "json" then
 		return false, "source.parser must be 'text' or 'json'"
