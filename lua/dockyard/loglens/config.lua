@@ -93,8 +93,9 @@ function M.resolve_runtime(container)
 	return {
 		source = source,
 		max_lines = positive_integer_or(source.max_lines, 1000),
-		tail = 100,
-	}, nil
+		tail = positive_integer_or(source.tails, 100),
+	},
+		nil
 end
 
 return M
