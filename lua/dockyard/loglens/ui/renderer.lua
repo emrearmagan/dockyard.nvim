@@ -2,6 +2,8 @@ local M = {}
 
 local header = require("dockyard.loglens.ui.header")
 local table_renderer = require("dockyard.ui.components.table")
+local highlighter = require("dockyard.loglens.ui.highlight")
+local ns = vim.api.nvim_create_namespace("dockyard.loglens")
 
 ---@param state LogLensState
 ---@return boolean
@@ -94,13 +96,14 @@ function M.render(state)
 		columns = columns,
 		rows = rows,
 		width = width,
-		margin = 1,
+		margin = 0,
 		fill = false,
 	})
 
 	vim.api.nvim_set_option_value("modifiable", true, { buf = state.buf_id })
 	vim.api.nvim_buf_set_lines(state.buf_id, 0, -1, false, lines)
 	vim.api.nvim_set_option_value("modifiable", false, { buf = state.buf_id })
+	highlighter.apply(state.buf_id, ns, lines, line_map, source.highlights or {})
 
 	state.line_map = line_map
 
