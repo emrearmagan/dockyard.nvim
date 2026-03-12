@@ -58,10 +58,37 @@ end
 
 ---@param entries LogLensEntry[]
 ---@param raw boolean
+---@param filter string|nil
 ---@return table[]
-local function to_rows(entries, raw)
+local function to_rows(entries, raw, filter)
 	local rows = {}
 	local row_to_entry = setmetatable({}, { __mode = "k" })
+	local needle = nil
+	if type(filter) == "string" and filter ~= "" then
+		needle = filter:lower()
+	end
+
+	local function row_matches(row)
+		if not needle then
+			return true
+		end
+
+		for _, value in pairs(row) do
+			local text
+			if type(value) == "table" then
+				text = vim.inspect(value)
+			else
+				text = tostring(value or "")
+			end
+
+			if text:lower():find(needle, 1, true) then
+				return true
+			end
+		end
+
+		return false
+	end
+
 	for _, entry in ipairs(entries or {}) do
 		if type(entry) == "table" then
 			local row = nil
@@ -70,7 +97,7 @@ local function to_rows(entries, raw)
 			elseif type(entry.data) == "table" then
 				row = entry.data
 			end
-			if row then
+			if row and row_matches(row) then
 				table.insert(rows, row)
 				row_to_entry[row] = entry
 			end
@@ -88,11 +115,12 @@ function M.render(state)
 	local winbar = header.render(state.container_name or "unknown", {
 		follow = state.follow,
 		raw = state.raw,
+		filter = state.filter,
 	})
 	vim.api.nvim_set_option_value("winbar", winbar, { win = state.win_id })
 
 	local source = state.active_source or {}
-	local rows, row_to_entry = to_rows(state.entries, state.raw)
+	local rows, row_to_entry = to_rows(state.entries, state.raw, state.filter)
 	local columns = infer_columns(rows, state.raw and { "raw" } or source._order)
 	if #columns == 0 then
 		vim.api.nvim_set_option_value("modifiable", true, { buf = state.buf_id })

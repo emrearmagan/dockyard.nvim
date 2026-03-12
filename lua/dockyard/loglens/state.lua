@@ -14,6 +14,7 @@
 ---@field container_name string|nil
 ---@field follow boolean
 ---@field raw boolean
+---@field filter string|nil
 ---@field entries LogLensEntry[]
 ---@field line_map table|nil
 ---@field job_id number|nil
@@ -35,6 +36,7 @@ local M = {
 
 	follow = true,
 	raw = false,
+	filter = nil,
 
 	entries = {},
 	line_map = nil,
@@ -55,6 +57,7 @@ function M.reset()
 
 	M.follow = true
 	M.raw = false
+	M.filter = nil
 
 	M.entries = {}
 	M.line_map = nil

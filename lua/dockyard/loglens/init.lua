@@ -57,6 +57,7 @@ local function setup_runtime(container)
 	state.container_name = loglens_config.normalize_container_name(container.name)
 	state.entries = {}
 	state.line_map = nil
+	state.filter = nil
 	state.active_source = runtime.source
 	state.max_lines = runtime.max_lines
 	state.parser_session = session

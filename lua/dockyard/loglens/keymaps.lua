@@ -20,6 +20,32 @@ function M.attach(buf, state, handlers)
 		handlers.refresh()
 	end, opts)
 
+	vim.keymap.set("n", "/", function()
+		vim.ui.input({
+			prompt = "Filter logs: ",
+			default = state.filter or "",
+		}, function(input)
+			if input == nil then
+				return
+			end
+
+			if input == "" then
+				state.filter = nil
+			else
+				state.filter = input
+			end
+
+			handlers.refresh()
+		end)
+	end, opts)
+
+	vim.keymap.set("n", "c", function()
+		if state.filter ~= nil then
+			state.filter = nil
+			handlers.refresh()
+		end
+	end, opts)
+
 	vim.keymap.set("n", "<CR>", function()
 		handlers.open_detail()
 	end, opts)
