@@ -14,8 +14,13 @@ local function parse_and_format(source, raw)
 		return nil
 	end
 
+	-- since the json can contain new lines and we want to display it in a single line, we need to replace them with spaces and trim the result.
+	local line = tostring(raw or ""):gsub("\r\n", " "):gsub("\n", " ")
+	line = line:gsub("%s+", " "):gsub("^%s+", ""):gsub("%s+$", "")
+
 	return {
-		raw = raw,
+		raw = line,
+		formatted = decoded,
 		data = row,
 	}
 end

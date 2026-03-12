@@ -8,8 +8,10 @@ local function format_row(source, raw)
 	if not ok or type(row) ~= "table" then
 		return nil
 	end
+
 	return {
 		raw = raw,
+		formatted = raw,
 		data = row,
 	}
 end

@@ -98,7 +98,22 @@ function M.open(container)
 			return
 		end
 		state.win_id = win
-		keymaps.attach(buf, state, M.close)
+
+		keymaps.attach(buf, state, {
+			close = M.close,
+			refresh = function()
+				renderer.render(state)
+			end,
+			open_detail = function()
+				local lnum = vim.api.nvim_win_get_cursor(state.win_id)[1]
+				local entry = state.line_map and state.line_map[lnum] or nil
+				if not entry then
+					vim.notify("LogLens: no entry at cursor", vim.log.levels.WARN)
+					return
+				end
+				require("dockyard.loglens.ui.popup").open(entry)
+			end,
+		})
 	end
 
 	local current_id = state.container and state.container.id or nil

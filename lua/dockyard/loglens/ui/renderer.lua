@@ -57,15 +57,26 @@ local function infer_columns(rows, order)
 end
 
 ---@param entries LogLensEntry[]
+---@param raw boolean
 ---@return table[]
-local function to_rows(entries)
+local function to_rows(entries, raw)
 	local rows = {}
-	for _, item in ipairs(entries or {}) do
-		if type(item) == "table" and type(item.data) == "table" then
-			table.insert(rows, item.data)
+	local row_to_entry = setmetatable({}, { __mode = "k" })
+	for _, entry in ipairs(entries or {}) do
+		if type(entry) == "table" then
+			local row = nil
+			if raw then
+				row = { raw = tostring(entry.raw or "") }
+			elseif type(entry.data) == "table" then
+				row = entry.data
+			end
+			if row then
+				table.insert(rows, row)
+				row_to_entry[row] = entry
+			end
 		end
 	end
-	return rows
+	return rows, row_to_entry
 end
 
 ---@param state LogLensState
@@ -81,8 +92,8 @@ function M.render(state)
 	vim.api.nvim_set_option_value("winbar", winbar, { win = state.win_id })
 
 	local source = state.active_source or {}
-	local rows = to_rows(state.entries)
-	local columns = infer_columns(rows, source._order)
+	local rows, row_to_entry = to_rows(state.entries, state.raw)
+	local columns = infer_columns(rows, state.raw and { "raw" } or source._order)
 	if #columns == 0 then
 		vim.api.nvim_set_option_value("modifiable", true, { buf = state.buf_id })
 		vim.api.nvim_buf_set_lines(state.buf_id, 0, -1, false, {})
@@ -103,12 +114,21 @@ function M.render(state)
 	vim.api.nvim_set_option_value("modifiable", true, { buf = state.buf_id })
 	vim.api.nvim_buf_set_lines(state.buf_id, 0, -1, false, lines)
 	vim.api.nvim_set_option_value("modifiable", false, { buf = state.buf_id })
-	highlighter.apply(state.buf_id, ns, lines, line_map, source.highlights or {})
+	if not state.raw then
+		highlighter.apply(state.buf_id, ns, lines, line_map, source.highlights or {})
+	end
 
-	state.line_map = line_map
+	-- create a mapping from line to entry for later retrieval (e.g. shown for the popup)
+	local resolved_line_map = {}
+	for lnum, row in pairs(line_map or {}) do
+		resolved_line_map[lnum] = row_to_entry[row] or row
+	end
+	state.line_map = resolved_line_map
 
-	local n = vim.api.nvim_buf_line_count(state.buf_id)
-	vim.api.nvim_win_set_cursor(state.win_id, { n, 0 })
+	if state.follow then
+		local n = vim.api.nvim_buf_line_count(state.buf_id)
+		vim.api.nvim_win_set_cursor(state.win_id, { n, 0 })
+	end
 end
 
 return M

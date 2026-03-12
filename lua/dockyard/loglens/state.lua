@@ -1,5 +1,6 @@
 ---@class LogLensEntry
 ---@field raw string
+---@field formatted string
 ---@field data table<string, any>
 
 ---@class LogLensParserSession
