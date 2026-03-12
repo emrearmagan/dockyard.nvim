@@ -63,7 +63,7 @@ local function open_with(mode, win_config_fn)
 	register_view_keymaps()
 
 	data_state.containers.refresh({
-		silent = true,
+		silent = false,
 		on_success = function()
 			if M.is_open() then
 				renderer.render()
@@ -93,7 +93,7 @@ local function refresh_current_view_data(on_done)
 	end
 
 	target.refresh({
-		silent = true,
+		silent = false,
 		on_success = on_done,
 		on_error = on_done,
 	})
