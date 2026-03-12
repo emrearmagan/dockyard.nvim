@@ -42,7 +42,6 @@ function M.get_container_config(container_name)
 	return {
 		sources = {
 			{
-				type = "docker",
 				parser = "text",
 				format = function(entry)
 					if entry == "" then

@@ -36,14 +36,15 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 ```
 
 <p align="center">
-  <img src="./examples/images.png" alt="images" width="33%" />
-  <img src="./examples/networks.png" alt="networks" width="33%" />
-  <img src="./examples/detail.png" alt="container details" width="33%" />
+  <img src="./examples/images.png" alt="images" width="49%" />
+  <img src="./examples/networks.png" alt="networks" width="49%" />
+</p>
+
+<p align="center">
+  <img src="./examples/detail.png" alt="images" width="49%" />
 </p>
 
 ## Configuration
-
-### Basic setup (one container)
 
 ```lua
 require("dockyard").setup({
@@ -53,7 +54,6 @@ require("dockyard").setup({
         sources = {
           {
             name = "App JSON",
-            type = "file",
             path = "/var/log/app.json",
             parser = "json",
 
@@ -72,9 +72,6 @@ require("dockyard").setup({
         sources = {
           {
             name = "Docker Logs",
-            type = "docker",
-            parser = "text",
-
             _order = { "logs" },
             format = function(line)
               return { logs = line }
@@ -96,8 +93,7 @@ Open LogLens from the containers tab with `L`. Each container can define one or 
 ### Source options
 
 - `name` string (optional)
-- `type` `"docker" | "file"`
-- `path` string (required for `type = "file"`)
+- `path` string (optional; when set, logs are read from that file inside the container)
 - `parser` `"json" | "text"`
 - `_order` `string[]` (optional column order)
 - `format` function (required)
@@ -112,7 +108,6 @@ For text parser, `format` receives a string line.
 ```lua
 {
   name = "Postgres Logs",
-  type = "docker",
   parser = "text",
   _order = { "logs" },
   format = function(line)
@@ -130,7 +125,6 @@ For JSON parser, `format` receives a decoded table.
 ```lua
 {
   name = "Backend JSON",
-  type = "file",
   path = "/var/log/backend.json",
   parser = "json",
   max_lines = 2000,
