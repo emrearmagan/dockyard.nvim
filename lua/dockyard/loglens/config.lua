@@ -18,7 +18,24 @@ end
 function M.get_container_config(container_name)
 	local opts = dockyard_config.options.loglens or {}
 	local containers = opts.containers or {}
-	return containers[container_name]
+	local cfg = containers[container_name]
+	if cfg then
+		return cfg
+	end
+
+	return {
+		sources = {
+			{
+				type = "docker",
+				parser = "text",
+				format = function(entry)
+					return {
+						logs = entry.message,
+					}
+				end,
+			},
+		},
+	}
 end
 
 ---@param source LogSource

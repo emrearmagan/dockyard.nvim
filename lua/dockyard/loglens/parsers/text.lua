@@ -32,7 +32,7 @@ function M.create(source)
 			end
 			local line = pending:sub(1, idx - 1)
 			pending = pending:sub(idx + 1)
-			local row = format_row(source, { raw = line, message = line })
+			local row = format_row(source, { message = line })
 			if row then
 				table.insert(rows, row)
 			end

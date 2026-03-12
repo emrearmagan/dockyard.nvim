@@ -6,7 +6,7 @@ local M = {}
 ---@return string[]
 local function build_command(container, source, tail)
 	if source.type == "file" then
-		return { "docker", "exec", container.id, "tail", "-n", tostring(tail), source.path }
+		return { "docker", "exec", container.id, "tail", "-n", tostring(tail), "-f", source.path }
 	end
 
 	return { "docker", "logs", "--follow", "--tail", tostring(tail), container.id }

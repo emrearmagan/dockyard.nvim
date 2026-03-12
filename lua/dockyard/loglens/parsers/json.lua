@@ -14,18 +14,17 @@ local function parse_and_format(source, raw)
 	if not ok or type(decoded) ~= "table" then
 		return nil
 	end
-	local map = fields(source)
+
 	local entry = {
 		raw = raw,
 		data = decoded,
-		level = decoded[map.level or "level"],
-		message = decoded[map.message or "message"],
-		timestamp = decoded[map.timestamp or "timestamp"],
 	}
-	local ok_fmt, row = pcall(source.format, entry)
+
+	local ok_fmt, row = pcall(source.format, entry.data)
 	if not ok_fmt or type(row) ~= "table" then
 		return nil
 	end
+
 	return row
 end
 
