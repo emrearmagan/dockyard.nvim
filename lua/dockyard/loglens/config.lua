@@ -2,6 +2,22 @@ local dockyard_config = require("dockyard.config")
 
 local M = {}
 
+---@param value any
+---@param fallback number
+---@return number
+local function positive_integer_or(value, fallback)
+	if type(value) ~= "number" then
+		return fallback
+	end
+
+	local n = math.floor(value)
+	if n < 1 then
+		return fallback
+	end
+
+	return n
+end
+
 ---@class LogLensRuntime
 ---@field source LogSource
 ---@field max_lines number
@@ -76,7 +92,7 @@ function M.resolve_runtime(container)
 
 	return {
 		source = source,
-		max_lines = 2000,
+		max_lines = positive_integer_or(source.max_lines, 1000),
 		tail = 100,
 	}, nil
 end

@@ -23,6 +23,7 @@
 --- @field path? string                       If set, logs are read from this file in container
 --- @field parser LogParserType               How to parse logs ("json" or "text")
 --- @field _order? string[]                   Optional column key order (e.g. {"time","level","message"})
+--- @field max_lines? number                  Max rows kept in memory per LogLens session
 --- @field format? fun(entry: table): table<string, any>   User function to format the display row
 --- @field highlights? LogHighlightRule[]     Highlight rules for this source
 
