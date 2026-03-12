@@ -5,7 +5,7 @@ Interactive Docker dashboard directly in your editor. It lets you view and manag
 > [!CAUTION]
 > **Still in early development, will have breaking changes!**
 
-![overview](./examples/overview.gif)
+![overview](./examples/overview.mp4)
 
 ## Introduction
 
