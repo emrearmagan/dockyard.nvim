@@ -47,6 +47,9 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 
 ## Configuration
 
+> [!tip]
+> It's a good idea to run `:checkhealth dockyard` to see if everything is set up correctly.
+
 ```lua
 require("dockyard").setup({
   loglens = {
