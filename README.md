@@ -5,7 +5,7 @@ Interactive Docker dashboard directly in your editor. It lets you view and manag
 > [!CAUTION]
 > **Still in early development, will have breaking changes!**
 
-[![overview](./examples/overview.gif)](./examples/overview.mp4)
+<video src="https://github.com/user-attachments/assets/780cdcf1-5bee-4468-9cd9-7a3ffcdad192" controls width="600"></video>
 
 ## Introduction
 
@@ -35,13 +35,14 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 }
 ```
 
+
 <p align="center">
-  <img src="./examples/images.png" alt="images" width="49%" />
-  <img src="./examples/networks.png" alt="networks" width="49%" />
+  <img src="https://github.com/user-attachments/assets/45ea8bb8-ba3d-4152-815c-eceb826d35ac" alt="images" width="49%" />
+  <img src="https://github.com/user-attachments/assets/6ac75d4f-e54a-47f4-810a-c3bf331b7f8e" alt="networks" width="49%" />
 </p>
 
 <p align="center">
-  <img src="./examples/detail.png" alt="images" width="49%" />
+  <img src="https://github.com/user-attachments/assets/35655c5e-52f6-492e-9359-fdefd853e928" alt="images" width="49%" />
 </p>
 
 ## Configuration
@@ -86,7 +87,7 @@ require("dockyard").setup({
 
 ## LogLens
 
-![loglens](./examples/loglense.png)
+![loglens](https://github.com/user-attachments/assets/2d5121cb-3a79-4cb8-a248-a894bc091e31)
 
 Open LogLens from the containers tab with `L`. Each container can define one or more log sources.
 
