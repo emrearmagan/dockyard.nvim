@@ -15,7 +15,7 @@ end
 ---@return { lines: string[], highlights: table[] }
 function M.render(mode, width)
 	local inner = math.max(width - 2, 20)
-	local title = "    Docker  "
+	local title = "    Dockyard  "
 	local line, start_col = center_text(title, inner)
 
 	return {
