@@ -135,7 +135,7 @@ function M.render(state)
 		columns = columns,
 		rows = rows,
 		width = width,
-		margin = 1,
+		margin = 0,
 		fill = false,
 	})
 
