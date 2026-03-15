@@ -1,6 +1,16 @@
 local M = {}
 
 ---@param source LogSource
+---@return table
+local function build_ctx(source)
+	return {
+		name = source.name,
+		path = source.path,
+		parser = source.parser,
+	}
+end
+
+---@param source LogSource
 ---@param raw string
 ---@return LogLensEntry|nil
 local function parse_and_format(source, raw)
@@ -9,7 +19,7 @@ local function parse_and_format(source, raw)
 		return nil
 	end
 
-	local ok_fmt, row = pcall(source.format, decoded)
+	local ok_fmt, row = pcall(source.format, decoded, build_ctx(source))
 	if not ok_fmt or type(row) ~= "table" then
 		return nil
 	end
