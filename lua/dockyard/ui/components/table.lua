@@ -203,7 +203,7 @@ local function compute_widths(columns, rows, available_width, gap_after, tree, f
 				if not col.width then
 					local is_last = (i == #columns)
 					local allow_grow_last = col.grow_last == true
-					local capped_by_last = is_last and (not allow_grow_last) and widths[i] >= desired[i]
+					local capped_by_last = is_last and not allow_grow_last and widths[i] >= desired[i]
 					local capped_by_max = col.max_width ~= nil and widths[i] >= col.max_width
 
 					if not capped_by_last and not capped_by_max then
@@ -234,10 +234,9 @@ function M.render(opts)
 	local rows = flatten_rows(opts.rows or {}, tree)
 	local width = opts.width or vim.o.columns
 	local margin = opts.margin or 2
-	local right_margin = opts.right_margin or margin
 	local cell_hl = opts.cell_hl
 	local default_gap = opts.column_gap or 2
-	local fill = opts.fill ~= false
+	local fill = opts.fill and false
 
 	local function gap_after(index)
 		local c = columns[index]
@@ -263,7 +262,7 @@ function M.render(opts)
 	end
 
 	-- Keep both left and right padding so table aligns with navbar framing.
-	compute_widths(columns, rows, math.max(width - margin - right_margin, 1), gap_after, tree, fill)
+	compute_widths(columns, rows, math.max(width - (margin * 2), 1), gap_after, tree, fill)
 
 	local lines = {}
 	local line_map = {}

@@ -56,7 +56,6 @@ local function append_table_rows(lines, spans, rows, width)
 		rows = table_rows,
 		width = width,
 		margin = 0,
-		right_margin = 0,
 		cell_hl = function(row, column)
 			if column.key == "field" then
 				return row._label_hl

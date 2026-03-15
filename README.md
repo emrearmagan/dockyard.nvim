@@ -59,20 +59,30 @@ require("dockyard").setup({
   loglens = {
     containers = {
       ["api"] = {
+        _order = { "time", "level", "message" },
+        format = function(entry)
+          return {
+            time = entry.timestamp and entry.timestamp:sub(12, 19) or "--:--:--",
+            level = (entry.level or "info"):upper(),
+            message = entry.message or "",
+          }
+        end,
+        highlights = {
+          { pattern = "%d%d:%d%d:%d%d", group = "Comment" },
+          { pattern = "%f[%a]ERROR%f[^%a]", group = "ErrorMsg" },
+        },
         sources = {
           {
-            name = "App JSON",
+            name = "Backend log1",
             path = "/var/log/app.json",
             parser = "json",
-
-            _order = { "time", "level", "message" },
-            format = function(entry)
-              return {
-                time = entry.timestamp and entry.timestamp:sub(12, 19) or "--:--:--",
-                level = (entry.level or "info"):upper(),
-                message = entry.message or "",
-              }
-            end,
+            tails = 200,
+          },
+          {
+            name = "Backend log2",
+            path = "/var/log/app2.json",
+            parser = "json",
+            tails = 200,
           },
         },
       },
@@ -81,6 +91,7 @@ require("dockyard").setup({
           {
             name = "Docker Logs",
             _order = { "logs" },
+            parser = "text",
             format = function(line)
               return { logs = line }
             end,
@@ -103,23 +114,28 @@ Open LogLens from the containers tab with `L`. Each container can define one or 
 - `name` string (optional)
 - `path` string (optional; when set, logs are read from that file inside the container)
 - `parser` `"json" | "text"`
+- `tails` number (optional, default `100`)
+
+Container-level defaults (applied to all sources unless overridden):
+
 - `_order` `string[]` (optional column order)
-- `format` function (required)
+- `format` function (required at container level or source level; receives `(entry, ctx)`)
 - `highlights` rules (optional)
 - `max_lines` number (optional, default `1000`)
 - `tails` number (optional, default `100`)
 
 #### Text parser
 
-For text parser, `format` receives a string line.
+For text parser, `format` receives `(line, ctx)`.
 
 ```lua
 {
   name = "Postgres Logs",
   parser = "text",
   _order = { "logs" },
-  format = function(line)
+  format = function(line, ctx)
     return {
+      source = ctx.name or "-",
       logs = line,
     }
   end,
@@ -128,7 +144,7 @@ For text parser, `format` receives a string line.
 
 #### JSON parser
 
-For JSON parser, `format` receives a decoded table.
+For JSON parser, `format` receives `(entry, ctx)` where `ctx` includes source metadata (`name`, `path`, `parser`).
 
 ```lua
 {
@@ -139,15 +155,16 @@ For JSON parser, `format` receives a decoded table.
   tails = 150,
 
   _order = { "time", "level", "message", "context" },
-  format = function(entry)
+  format = function(entry, ctx)
     local ts = entry.timestamp and entry.timestamp:sub(12, 19) or "--:--:--"
     local level = (entry.level or "info"):upper()
-    local ctx = entry.context or {}
-    local user = ctx.user_id or "-"
-    local trace = entry.trace_id or ctx.trace_id or "-"
+    local ectx = entry.context or {}
+    local user = ectx.user_id or "-"
+    local trace = entry.trace_id or ectx.trace_id or "-"
     return {
       time = ts,
       level = level,
+      source = ctx.name or "-",
       message = entry.message or "",
       context = string.format("user=%s trace=%s", user, trace),
     }

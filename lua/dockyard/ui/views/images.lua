@@ -194,7 +194,6 @@ function M.render(width)
 	local lines, line_map, spans = table_view.render({
 		width = width,
 		margin = 2,
-		right_margin = 2,
 		columns = {
 			{ key = "name", name = "Image / Container", min_width = 28 },
 			{ key = "tag", name = "Tag", min_width = 16 },

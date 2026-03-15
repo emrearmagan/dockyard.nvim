@@ -160,7 +160,6 @@ function M.render(width)
 	local lines, line_map, spans = table_view.render({
 		width = width,
 		margin = 2,
-		right_margin = 2,
 		columns = {
 			{ key = "name", name = "Network / Container", min_width = 30 },
 			{ key = "driver", name = "Driver", min_width = 14 },
