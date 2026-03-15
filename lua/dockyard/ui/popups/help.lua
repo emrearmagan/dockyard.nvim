@@ -62,7 +62,6 @@ local function render_content()
 	local lines = { " Keyboard Shortcuts ", "" }
 	local spans = {}
 
-	-- Header
 	table.insert(spans, {
 		line = 0,
 		start_col = 0,

@@ -39,7 +39,6 @@ local groups = {
 	DockyardPorts = { fg = palette.orange },
 	DockyardMuted = { fg = palette.muted },
 
-	-- compatibility aliases (older names used in newer docs)
 	DockyardNavActive = { link = "DockyardTabActive" },
 	DockyardNavInactive = { link = "DockyardTabInactive" },
 	DockyardBorder = { link = "FloatBorder" },
@@ -47,14 +46,12 @@ local groups = {
 	DockyardNormal = { link = "Normal" },
 }
 
----Register all Dockyard highlight groups.
 function M.setup()
 	for name, opts in pairs(groups) do
 		vim.api.nvim_set_hl(0, name, opts)
 	end
 end
 
----Map Docker status string to highlight group.
 ---@param status string|nil
 ---@return string
 function M.status_hl(status)

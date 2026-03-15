@@ -17,10 +17,10 @@
 ---@field filter string|nil
 ---@field entries LogLensEntry[]
 ---@field line_map table|nil
----@field job_id number|nil
+---@field job_ids number[]
 ---@field active_source LogSource|nil
 ---@field max_lines number
----@field parser_session LogLensParserSession|nil
+---@field parser_sessions LogLensParserSession[]
 
 ---@class LogLensState: LogLensStateData
 ---@field reset fun()
@@ -41,10 +41,10 @@ local M = {
 	entries = {},
 	line_map = nil,
 
-	job_id = nil,
+	job_ids = {},
 	active_source = nil,
 	max_lines = 2000,
-	parser_session = nil,
+	parser_sessions = {},
 }
 
 ---@cast M LogLensState
@@ -62,10 +62,10 @@ function M.reset()
 	M.entries = {}
 	M.line_map = nil
 
-	M.job_id = nil
+	M.job_ids = {}
 	M.active_source = nil
 	M.max_lines = 2000
-	M.parser_session = nil
+	M.parser_sessions = {}
 end
 
 ---@return boolean

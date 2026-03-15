@@ -10,8 +10,10 @@ local window = require("dockyard.loglens.ui.window")
 local M = {}
 
 local function stop_stream()
-	stream.stop(state.job_id)
-	state.job_id = nil
+	for _, job_id in ipairs(state.job_ids or {}) do
+		stream.stop(job_id)
+	end
+	state.job_ids = {}
 end
 
 local function trim_entries()
@@ -29,12 +31,14 @@ local function append_rows(rows)
 end
 
 local function flush_parser_session()
-	if not state.parser_session then
+	if not state.parser_sessions or #state.parser_sessions == 0 then
 		return
 	end
-	local rows = state.parser_session:flush()
-	if #rows > 0 then
-		append_rows(rows)
+	for _, session in ipairs(state.parser_sessions) do
+		local rows = session:flush()
+		if #rows > 0 then
+			append_rows(rows)
+		end
 	end
 end
 
@@ -47,10 +51,14 @@ local function setup_runtime(container)
 		return nil
 	end
 
-	local session, parser_err = parser_factory.create_session(runtime.source)
-	if not session then
-		vim.notify("LogLens: " .. tostring(parser_err), vim.log.levels.ERROR)
-		return nil
+	local parser_sessions = {}
+	for _, source in ipairs(runtime.sources or {}) do
+		local session, parser_err = parser_factory.create_session(source)
+		if not session then
+			vim.notify("LogLens: " .. tostring(parser_err), vim.log.levels.ERROR)
+			return nil
+		end
+		table.insert(parser_sessions, session)
 	end
 
 	state.container = container
@@ -58,30 +66,45 @@ local function setup_runtime(container)
 	state.entries = {}
 	state.line_map = nil
 	state.filter = nil
-	state.active_source = runtime.source
+	state.active_source = {
+		_order = runtime._order,
+		highlights = runtime.highlights,
+	}
 	state.max_lines = runtime.max_lines
-	state.parser_session = session
+	state.parser_sessions = parser_sessions
 
 	renderer.render(state)
-	return runtime.tail
+	return runtime.sources
 end
 
-local function start_container_stream(container, tail)
-	local source = state.active_source
-	local session = state.parser_session
-	if not source or not session then
+local function start_container_stream(container, sources)
+	if not sources or #sources == 0 then
 		return
 	end
 
 	stop_stream()
-	state.job_id = stream.start(container, source, tail, function(chunk)
-		local rows = session:push(chunk)
-		if #rows > 0 then
-			append_rows(rows)
+	state.job_ids = {}
+
+	for i, source in ipairs(sources) do
+		local session = state.parser_sessions[i]
+		if session then
+			local job_id = stream.start(container, source, source.tails, function(chunk)
+				local rows = session:push(chunk)
+				if #rows > 0 then
+					append_rows(rows)
+				end
+			end, function()
+				local tail_rows = session:flush()
+				if #tail_rows > 0 then
+					append_rows(tail_rows)
+				end
+			end)
+
+			if job_id then
+				table.insert(state.job_ids, job_id)
+			end
 		end
-	end, function()
-		flush_parser_session()
-	end)
+	end
 end
 
 ---Open LogLens for a container.
@@ -127,12 +150,12 @@ function M.open(container)
 		flush_parser_session()
 		stop_stream()
 
-		local tail = setup_runtime(container)
-		if not tail then
+		local sources = setup_runtime(container)
+		if not sources then
 			return
 		end
 
-		start_container_stream(container, tail)
+		start_container_stream(container, sources)
 	end
 
 	vim.api.nvim_set_current_win(state.win_id)

@@ -180,7 +180,6 @@ function M.render(width)
 		cell_hl = cell_hl,
 	})
 
-	-- color network icon + child status icon like images view does
 	for lnum, node in pairs(line_map) do
 		if node and node.kind == "network" then
 			local line = lines[lnum] or ""

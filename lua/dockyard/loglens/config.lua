@@ -19,9 +19,10 @@ local function positive_integer_or(value, fallback)
 end
 
 ---@class LogLensRuntime
----@field source LogSource
+---@field sources LogSource[]
 ---@field max_lines number
----@field tail number
+---@field _order string[]|nil
+---@field highlights LogHighlightRule[]|nil
 
 ---@param name string|nil
 ---@return string
@@ -68,9 +69,37 @@ function M.validate_source(source)
 		return false, "source.parser must be 'text' or 'json'"
 	end
 	if type(source.format) ~= "function" then
-		return false, "source.format(entry) is required"
+		return false, "source.format(entry) or container.format(entry) is required"
 	end
 	return true, nil
+end
+
+---@param cfg ContainerLogConfig
+---@param source LogSource
+---@return LogSource
+local function resolve_source_config(cfg, source)
+	local resolved = vim.tbl_deep_extend("force", {}, source)
+
+	if resolved.format == nil then
+		resolved.format = cfg.format
+	end
+	if resolved._order == nil then
+		resolved._order = cfg._order
+	end
+	if resolved.highlights == nil then
+		resolved.highlights = cfg.highlights
+	end
+	if resolved.tails == nil then
+		resolved.tails = cfg.tails
+	end
+	if resolved.max_lines == nil then
+		resolved.max_lines = cfg.max_lines
+	end
+
+	resolved.tails = positive_integer_or(resolved.tails, 100)
+	resolved.max_lines = positive_integer_or(resolved.max_lines, 1000)
+
+	return resolved
 end
 
 ---@param container Container
@@ -83,16 +112,26 @@ function M.resolve_runtime(container)
 		return nil, string.format("No sources configured for container '%s'", name)
 	end
 
-	local source = cfg.sources[1]
-	local ok, err = M.validate_source(source)
-	if not ok then
-		return nil, err
+	local resolved_sources = {}
+	for _, source in ipairs(cfg.sources) do
+		local resolved = resolve_source_config(cfg, source)
+		local ok, err = M.validate_source(resolved)
+		if not ok then
+			return nil, err
+		end
+		table.insert(resolved_sources, resolved)
+	end
+
+	local max_lines = cfg.max_lines
+	if max_lines == nil then
+		max_lines = resolved_sources[1] and resolved_sources[1].max_lines or nil
 	end
 
 	return {
-		source = source,
-		max_lines = positive_integer_or(source.max_lines, 1000),
-		tail = positive_integer_or(source.tails, 100),
+		sources = resolved_sources,
+		max_lines = positive_integer_or(max_lines, 1000),
+		_order = cfg._order or (resolved_sources[1] and resolved_sources[1]._order or nil),
+		highlights = cfg.highlights or (resolved_sources[1] and resolved_sources[1].highlights or nil),
 	},
 		nil
 end
