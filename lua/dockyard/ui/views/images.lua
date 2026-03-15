@@ -193,13 +193,13 @@ function M.render(width)
 
 	local lines, line_map, spans = table_view.render({
 		width = width,
-		margin = 2,
+		margin = 1,
 		columns = {
 			{ key = "name", name = "Image / Container", min_width = 28 },
 			{ key = "tag", name = "Tag", min_width = 16 },
 			{ key = "image_id", name = "ID", min_width = 14 },
 			{ key = "size", name = "Size", min_width = 14 },
-			{ key = "created", name = "Created", min_width = 14, grow_last = true },
+			{ key = "created", name = "Created", min_width = 14 },
 		},
 		rows = rows,
 		tree = {

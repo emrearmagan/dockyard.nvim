@@ -58,6 +58,7 @@ function M.render(width)
 		columns = columns,
 		rows = rows,
 		width = width,
+		margin = 1,
 		cell_hl = function(row, column)
 			if column.key == "icon" then
 				return highlights.status_hl(row._status)
