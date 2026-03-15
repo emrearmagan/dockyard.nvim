@@ -64,4 +64,39 @@ M.create_window_fullscreen = function(buf, ui_state)
 	return win
 end
 
+---@param buf number
+---@return number|nil win_id
+M.create_window_floating = function(buf)
+	local total_w = vim.o.columns
+	local total_h = vim.o.lines
+
+	local width = math.max(60, math.floor(total_w * 0.7))
+	local height = math.max(12, math.floor(total_h * 0.5))
+	local row = math.floor((total_h - height) / 2)
+	local col = math.floor((total_w - width) / 2)
+
+	local ok, win = pcall(vim.api.nvim_open_win, buf, true, {
+		relative = "editor",
+		width = width,
+		height = height,
+		row = row,
+		col = col,
+		style = "minimal",
+		border = "rounded",
+		zindex = 260,
+	})
+	if not ok or not (win and vim.api.nvim_win_is_valid(win)) then
+		vim.notify("LogLens: Failed to create floating window", vim.log.levels.ERROR)
+		return nil
+	end
+
+	vim.api.nvim_set_option_value("number", false, { win = win })
+	vim.api.nvim_set_option_value("relativenumber", false, { win = win })
+	vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
+	vim.api.nvim_set_option_value("wrap", false, { win = win })
+	vim.api.nvim_set_option_value("cursorline", true, { win = win })
+
+	return win
+end
+
 return M

@@ -55,7 +55,6 @@ M.options = {
 }
 
 local function create_commands()
-	-- Ensure we replace any stale command handlers from previous reloads.
 	pcall(vim.api.nvim_del_user_command, "Dockyard")
 	pcall(vim.api.nvim_del_user_command, "DockyardFloat")
 	pcall(vim.api.nvim_del_user_command, "DockyardFull")

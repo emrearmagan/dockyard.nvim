@@ -94,7 +94,12 @@ function M.open(container)
 
 	if not (state.is_open() and state.has_valid_buffer()) then
 		local buf = window.create_buffer(state)
-		local win = window.create_window_fullscreen(buf, ui_state)
+		local win
+		if ui_state.mode == "panel" then
+			win = window.create_window_floating(buf)
+		else
+			win = window.create_window_fullscreen(buf, ui_state)
+		end
 		if not win then
 			return
 		end
