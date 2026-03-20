@@ -11,7 +11,19 @@ Interactive Docker dashboard directly in your editor. It lets you view and manag
 
 Dockyard provides a single Docker workspace inside Neovim. You can inspect containers, images, and networks, run common container actions, open shell sessions, and stream logs through LogLens without leaving the editor.
 
+## Features
+
+- [x] Inspect and manage containers
+- [x] Inspect and manage images
+- [x] Inspect and manage networks
+- [x] Open shell sessions inside containers
+- [x] Stream and inspect logs 
+- [ ] Navigate and search the file tree inside a container
+- [ ] Copy, modify, and manage files inside a container
+- [ ] Run Docker build commands from Dockyard
+
 <video src="https://github.com/user-attachments/assets/780cdcf1-5bee-4468-9cd9-7a3ffcdad192" controls width="600"></video>
+
 
 ## Requirements
 
