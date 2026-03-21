@@ -260,6 +260,31 @@ end
 
 ---Example:
 ---```lua
+---local rows = {
+---  {
+---    kind = "image",
+---    key = "img:sha256:abcdef123456",
+---    name = "󰏗 nginx",
+---    tag = "latest",
+---    image_id = "abcdef123456",
+---    size = "188MB",
+---    created = "2 weeks ago",
+---    expanded = true,
+---    children = {
+---      {
+---        kind = "container",
+---        name = "● api",
+---        tag = "",
+---        image_id = "",
+---        size = "",
+---        created = "",
+---        _item = { kind = "container", id = "c1" },
+---      },
+---    },
+---    _item = { kind = "image", id = "sha256:abcdef123456" },
+---  },
+---}
+---
 ---local lines, line_map, spans = table_view.render({
 ---  width = width,
 ---  margin = 1,
@@ -267,6 +292,8 @@ end
 ---    { key = "name", name = "Image / Container", min_width = 28 },
 ---    { key = "tag", name = "Tag", min_width = 16 },
 ---    { key = "image_id", name = "ID", min_width = 14 },
+---    { key = "size", name = "Size", min_width = 14 },
+---    { key = "created", name = "Created", min_width = 14 },
 ---  },
 ---  rows = rows,
 ---  tree = {
@@ -280,6 +307,9 @@ end
 ---  cell_hl = function(row, col)
 ---    if row.kind == "image" and col.key == "name" then
 ---      return "DockyardName"
+---    end
+---    if row.kind == "image" and col.key == "tag" then
+---      return "DockyardImage"
 ---    end
 ---  end,
 ---})
