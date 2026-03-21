@@ -228,6 +228,67 @@ local function compute_widths(columns, rows, available_width, gap_after, tree, f
 	end
 end
 
+---@class TableColumn
+---@field key string Row field key.
+---@field name string Header label.
+---@field width? integer Fixed width; if omitted width is auto-computed.
+---@field min_width? integer Reserved for future behavior.
+---@field max_width? integer Max growth width when filling available space.
+---@field grow_last? boolean Allow last column to grow beyond natural width.
+---@field gap_after? integer Gap after this column.
+---@field hl? string Default highlight group for this column body cells.
+---@field header_hl? string Header highlight group for this column.
+
+---@class TableTreeOpts
+---@field children_key? string Child array field name (default: "children").
+---@field expanded_field? string Expanded state field name (default: "expanded").
+---@field default_expanded? boolean Default expansion for rows without explicit state.
+---@field indent? string Indentation text per depth level (default: "  ").
+---@field leaf_prefix? string Prefix for leaf rows (default: "└─ ").
+---@field show_indicator? boolean Show expand/collapse indicators (default: true).
+---@field is_expanded? fun(row:table):boolean Optional expanded-state callback.
+
+---@class TableRenderOpts
+---@field columns TableColumn[] Column definitions.
+---@field rows table[] Row data.
+---@field width? integer Total render width (default: vim.o.columns).
+---@field margin? integer Left/right margin spaces (default: 2).
+---@field column_gap? integer Default gap between columns (default: 2).
+---@field fill? boolean If false, do not stretch columns to available width.
+---@field cell_hl? fun(row:table, col:TableColumn):string|nil Per-cell highlight resolver.
+---@field tree? TableTreeOpts Tree options (optional).
+
+---Example:
+---```lua
+---local lines, line_map, spans = table_view.render({
+---  width = width,
+---  margin = 1,
+---  columns = {
+---    { key = "name", name = "Image / Container", min_width = 28 },
+---    { key = "tag", name = "Tag", min_width = 16 },
+---    { key = "image_id", name = "ID", min_width = 14 },
+---  },
+---  rows = rows,
+---  tree = {
+---    children_key = "children",
+---    expanded_field = "expanded",
+---    default_expanded = true,
+---    indent = "  ",
+---    show_indicator = true,
+---    leaf_prefix = "└─ ",
+---  },
+---  cell_hl = function(row, col)
+---    if row.kind == "image" and col.key == "name" then
+---      return "DockyardName"
+---    end
+---  end,
+---})
+---```
+---
+---@param opts TableRenderOpts
+---@return string[] lines Rendered text lines (header + spacer + body).
+---@return table<integer, table> line_map 1-based body line -> source row item (`row._item` when present).
+---@return table[] spans Highlight spans for extmarks.
 function M.render(opts)
 	local columns = vim.deepcopy(opts.columns or {})
 	local tree = resolve_tree(opts.tree)
