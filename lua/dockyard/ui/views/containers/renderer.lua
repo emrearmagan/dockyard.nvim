@@ -10,6 +10,7 @@ local navbar = require("dockyard.ui.components.navbar")
 local ui_utils = require("dockyard.ui.utils")
 local highlights = require("dockyard.ui.highlights")
 local view_state = require("dockyard.ui.views.containers.state")
+local icons = require("dockyard.ui.icons")
 
 local function current_width()
 	if ui_state.win_id ~= nil and vim.api.nvim_win_is_valid(ui_state.win_id) then
@@ -18,25 +19,11 @@ local function current_width()
 	return vim.o.columns
 end
 
-local function status_icon(status)
-	if status == "running" then
-		return "●"
-	end
-	if status == "paused" then
-		return "◐"
-	end
-	if status == "restarting" then
-		return "◍"
-	end
-
-	return "○"
-end
-
 local function build_rows(items)
 	local rows = {}
 	local spinner_frame = view_state.spinner_frame
 	for _, c in ipairs(items) do
-		local icon = status_icon(c.status)
+		local icon = icons.container_icon(c.status)
 		if spinner_frame and docker.is_transitional_status(c) then
 			icon = spinner_frame
 		end

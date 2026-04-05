@@ -9,6 +9,7 @@ local navbar = require("dockyard.ui.components.navbar")
 local ui_utils = require("dockyard.ui.utils")
 local highlights = require("dockyard.ui.highlights")
 local view_state = require("dockyard.ui.views.networks.state")
+local icons = require("dockyard.ui.icons")
 
 local function current_width()
 	if ui_state.win_id ~= nil and vim.api.nvim_win_is_valid(ui_state.win_id) then
@@ -33,19 +34,6 @@ local function ts(x)
 	end
 
 	return s
-end
-
-local function status_icon(status)
-	if status == "running" then
-		return "●"
-	end
-	if status == "paused" then
-		return "◐"
-	end
-	if status == "restarting" then
-		return "◍"
-	end
-	return "○"
 end
 
 local function network_key(net)

@@ -1,4 +1,5 @@
 local M = {}
+local icons = require("dockyard.ui.icons")
 
 local function text_width(text)
 	return vim.fn.strdisplaywidth(text)
@@ -18,12 +19,6 @@ function M.render(opts)
 	local current_view = opts.current_view
 	local views = opts.views or { "containers", "images", "networks" }
 
-	local icon = {
-		containers = "",
-		images = "󰏗",
-		networks = "󱂇",
-	}
-
 	local actions = {
 		{ label = " Refresh (R) ", hl = "DockyardActionRefresh" },
 		{ label = " Help (?) ", hl = "DockyardActionHelp" },
@@ -36,7 +31,7 @@ function M.render(opts)
 	local current_display_pos = margin
 
 	for _, view in ipairs(views) do
-		local label = string.format(" %s  %s ", icon[view] or "•", title_case(view))
+		local label = string.format(" %s  %s ", icons.view_icon(view), title_case(view))
 		local is_active = view == current_view
 		local hl_group = is_active and "DockyardTabActive" or "DockyardTabInactive"
 

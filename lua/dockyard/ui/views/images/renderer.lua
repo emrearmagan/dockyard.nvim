@@ -9,25 +9,13 @@ local navbar = require("dockyard.ui.components.navbar")
 local ui_utils = require("dockyard.ui.utils")
 local highlights = require("dockyard.ui.highlights")
 local view_state = require("dockyard.ui.views.images.state")
+local icons = require("dockyard.ui.icons")
 
 local function current_width()
 	if ui_state.win_id ~= nil and vim.api.nvim_win_is_valid(ui_state.win_id) then
 		return vim.api.nvim_win_get_width(ui_state.win_id)
 	end
 	return vim.o.columns
-end
-
-local function status_icon(status)
-	if status == "running" then
-		return "●"
-	end
-	if status == "paused" then
-		return "◐"
-	end
-	if status == "restarting" then
-		return "◍"
-	end
-	return "○"
 end
 
 local function normalize_image_ref(ref)
@@ -81,7 +69,7 @@ local function build_image_parent_row(img, containers)
 	local row = {
 		kind = "image",
 		key = key,
-		name = "󰏗 " .. (img.repository or "<none>"),
+		name = icons.image_icon("default") .. " " .. (img.repository or "<none>"),
 		tag = img.tag or "<none>",
 		image_id = tostring(img.id or ""):sub(1, 12),
 		size = img.size_human or img.size or "-",

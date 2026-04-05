@@ -38,7 +38,6 @@ local function start_polling()
 	view_state.poll_spinner = spinner.create({
 		interval_ms = POLL_INTERVAL_MS,
 		on_tick = function(frame)
-			print("tick", frame)
 			view_state.spinner_frame = frame
 			if not is_containers_view_active() then
 				stop_polling()
