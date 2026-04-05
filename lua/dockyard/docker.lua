@@ -86,7 +86,7 @@ end
 ---@param labels string|nil
 ---@param key string
 ---@return string|nil
-function M.extract_compose_label(labels, key)
+local function extract_compose_label(labels, key)
 	if type(labels) ~= "string" or labels == "" then
 		return nil
 	end
@@ -97,6 +97,39 @@ function M.extract_compose_label(labels, key)
 		end
 	end
 	return nil
+end
+
+---@return string
+local function format_ports(ports)
+	if not ports or ports == "" then
+		return ""
+	end
+
+	local seen = {}
+	local result = {}
+
+	for part in ports:gmatch("[^,]+") do
+		part = part:gsub("^%s+", ""):gsub("%s+$", "")
+
+		-- mapped ports
+		local host, container = part:match(":(%d+%-?%d*)%->(%d+%-?%d*)")
+		if host and container then
+			local key = host .. "→" .. container
+			if not seen[key] then
+				seen[key] = true
+				table.insert(result, key)
+			end
+		else
+			-- exposed only
+			local port = part:match("^(%d+%-?%d*)/tcp")
+			if port and not seen[port] then
+				seen[port] = true
+				table.insert(result, port)
+			end
+		end
+	end
+
+	return table.concat(result, ", ")
 end
 
 --- @alias ContainerCallback fun(result: {ok: boolean, data: Container[], error?: string})
@@ -186,8 +219,9 @@ function M.list_containers(callback)
 				local ok, parsed = pcall(vim.json.decode, line)
 				if ok and parsed then
 					parsed.status = normalize_status(parsed.status, parsed.status_message)
-					parsed.compose_project = M.extract_compose_label(parsed.labels, "com.docker.compose.project")
-					parsed.compose_service = M.extract_compose_label(parsed.labels, "com.docker.compose.service")
+					parsed.compose_project = extract_compose_label(parsed.labels, "com.docker.compose.project")
+					parsed.compose_service = extract_compose_label(parsed.labels, "com.docker.compose.service")
+					parsed.ports = format_ports(parsed.ports)
 					table.insert(containers, parsed)
 				else
 					vim.notify("Failed to parse container line: " .. line, vim.log.levels.WARN)
