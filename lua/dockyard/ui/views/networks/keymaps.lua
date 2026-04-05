@@ -23,7 +23,7 @@ local function get_network_node_at_cursor()
 end
 
 ---@param buf number
----@param notify fun(msg:string,level?:integer)
+---@param notify fun(msg:string,level?:"success"|"warn"|"error"|"info"|"loading")
 ---@param hooks { on_toggle?: fun(), on_remove_done?: fun(res: { ok: boolean, error?: string }|nil, ok: boolean) }|nil
 function M.setup(buf, notify, hooks)
 	local opts = { buffer = buf, silent = true, nowait = true }

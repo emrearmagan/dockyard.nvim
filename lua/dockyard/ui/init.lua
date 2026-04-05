@@ -1,5 +1,6 @@
 local M = {}
 local state = require("dockyard.ui.state")
+local footer = require("dockyard.ui.components.footer")
 local keymaps = require("dockyard.ui.keymaps")
 local ui_utils = require("dockyard.ui.utils")
 local config = require("dockyard.config")
@@ -92,7 +93,15 @@ local function setup_active_view()
 	end
 	local module = view_modules[state.current_view]
 	if module and type(module.setup) == "function" then
-		module.setup(state.buf_id, vim.notify)
+		module.setup(state.buf_id, function(msg, level)
+			if level == "error" then
+				vim.notify(msg, vim.log.levels.ERROR)
+			end
+
+			if state.footer_win_id ~= nil and vim.api.nvim_win_is_valid(state.footer_win_id) then
+				footer.notify(level or "info", msg)
+			end
+		end)
 	end
 end
 

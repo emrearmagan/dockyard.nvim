@@ -103,8 +103,11 @@ local function segments_for()
 	local left = vim.deepcopy(items)
 
 	local right = {
-		{ text = notice.text ~= "" and notice.text or "", hl = notice.text ~= "" and notice.hl_group or "DockyardMuted", alignment = "right" },
-		{ text = "dockyard", hl = "DockyardName", alignment = "right" },
+		{
+			text = notice.text ~= "" and notice.text or "",
+			hl = notice.text ~= "" and notice.hl_group or "DockyardMuted",
+			alignment = "right",
+		},
 		{ text = "? help", hl = "DockyardHelpKey", alignment = "right" },
 	}
 
@@ -193,7 +196,7 @@ local function render_line(segments, width)
 	end
 
 	local highlights = {
-		{ line = 0, start_col = 0, end_col = math.max(width, 1), hl_group = "DockyardFooterBackground" },
+		{ line = 0, start_col = 0, end_col = math.max(#line, 1), hl_group = "DockyardFooterBackground" },
 	}
 
 	for _, hl in ipairs(left_hls) do

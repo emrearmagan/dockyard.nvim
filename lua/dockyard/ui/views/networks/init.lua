@@ -4,7 +4,7 @@ local keymaps = require("dockyard.ui.views.networks.keymaps")
 local controller = require("dockyard.ui.views.networks.controller")
 
 ---@param buf number
----@param notify fun(msg:string,level?:integer)
+---@param notify fun(msg:string,level?:"success"|"warn"|"error"|"info"|"loading")
 function M.setup(buf, notify)
 	keymaps.setup(buf, notify, {
 		on_toggle = function()

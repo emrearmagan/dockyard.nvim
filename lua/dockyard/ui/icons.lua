@@ -27,9 +27,11 @@ local ICONS = {
 		networks = "󰖩",
 		fallback = "•",
 	},
-	global = {
-		fallback = "•",
-	},
+	success = "✔",
+	warn = "⚠",
+	error = "✖",
+	info = "ℹ",
+	fallback = "•",
 }
 
 ---@param name string|nil
@@ -70,7 +72,7 @@ end
 ---@return string
 function M.icon(name)
 	local key = normalize(name)
-	return ICONS.global[key] or ICONS.global.fallback
+	return ICONS[key] or ICONS.fallback
 end
 
 return M
