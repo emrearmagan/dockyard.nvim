@@ -2,9 +2,9 @@ local docker = require("dockyard.docker")
 
 local M = {}
 
----@param item table
+---@param item Container
 ---@param action string
----@param on_done fun(res: table|nil, ok: boolean)|nil
+---@param on_done fun(res: { ok: boolean, error?: string }|nil, ok: boolean)|nil
 ---@param notify fun(msg: string, level?: integer)
 local function run_action(item, action, on_done, notify)
 	docker.container_action(item.id, action, function(res)
@@ -22,8 +22,8 @@ local function run_action(item, action, on_done, notify)
 	end)
 end
 
----@param item table|nil
----@param on_done fun(res: table|nil, ok: boolean)|nil
+---@param item Container|nil
+---@param on_done fun(res: { ok: boolean, error?: string }|nil, ok: boolean)|nil
 ---@param notify fun(msg: string, level?: integer)
 function M.toggle_start_stop(item, on_done, notify)
 	if not item then
@@ -34,8 +34,8 @@ function M.toggle_start_stop(item, on_done, notify)
 	run_action(item, status == "running" and "stop" or "start", on_done, notify)
 end
 
----@param item table|nil
----@param on_done fun(res: table|nil, ok: boolean)|nil
+---@param item Container|nil
+---@param on_done fun(res: { ok: boolean, error?: string }|nil, ok: boolean)|nil
 ---@param notify fun(msg: string, level?: integer)
 function M.stop(item, on_done, notify)
 	if not item then
@@ -45,8 +45,8 @@ function M.stop(item, on_done, notify)
 	run_action(item, "stop", on_done, notify)
 end
 
----@param item table|nil
----@param on_done fun(res: table|nil, ok: boolean)|nil
+---@param item Container|nil
+---@param on_done fun(res: { ok: boolean, error?: string }|nil, ok: boolean)|nil
 ---@param notify fun(msg: string, level?: integer)
 function M.restart(item, on_done, notify)
 	if not item then
@@ -56,8 +56,8 @@ function M.restart(item, on_done, notify)
 	run_action(item, "restart", on_done, notify)
 end
 
----@param item table|nil
----@param on_done fun(res: table|nil, ok: boolean)|nil
+---@param item Container|nil
+---@param on_done fun(res: { ok: boolean, error?: string }|nil, ok: boolean)|nil
 ---@param notify fun(msg: string, level?: integer)
 function M.remove(item, on_done, notify)
 	if not item then

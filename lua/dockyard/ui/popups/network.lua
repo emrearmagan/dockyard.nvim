@@ -194,13 +194,14 @@ popup = generic_popup.create({
 	on_close = reset_cached_data,
 })
 
-function M.open(node)
-	if not node or node.kind ~= "network" or not node.item then
+---@param item Network|nil
+function M.open(item)
+	if not item or not item.id then
 		vim.notify("Dockyard: select a network row", vim.log.levels.WARN)
 		return
 	end
 
-	last_item = node.item
+	last_item = item
 	last_data = nil
 
 	local title = string.format(" Network: %s ", v(last_item.name))

@@ -24,7 +24,7 @@ end
 
 ---@param buf number
 ---@param notify fun(msg:string,level?:integer)
----@param hooks { on_toggle?: fun(), on_remove_done?: fun(res: table|nil, ok: boolean) }|nil
+---@param hooks { on_toggle?: fun(), on_remove_done?: fun(res: { ok: boolean, error?: string }|nil, ok: boolean) }|nil
 function M.setup(buf, notify, hooks)
 	local opts = { buffer = buf, silent = true, nowait = true }
 	local function open_details_at_cursor()
@@ -47,9 +47,9 @@ function M.setup(buf, notify, hooks)
 	vim.keymap.set("n", "d", function()
 		local node = get_network_node_at_cursor()
 		if node then
-			actions.remove(node, function(_, ok)
+			actions.remove(node.item, function(res, ok)
 				if hooks and hooks.on_remove_done then
-					hooks.on_remove_done(nil, ok)
+					hooks.on_remove_done(res, ok)
 				end
 			end, notify)
 		end

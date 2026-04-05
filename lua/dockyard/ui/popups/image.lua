@@ -178,13 +178,14 @@ popup = generic_popup.create({
 	on_close = reset_cached_data,
 })
 
-function M.open(node)
-	if not node or node.kind ~= "image" or not node.item then
+---@param item Image|nil
+function M.open(item)
+	if not item or not item.id then
 		vim.notify("Dockyard: select an image row", vim.log.levels.WARN)
 		return
 	end
 
-	last_item = node.item
+	last_item = item
 	last_data = nil
 
 	local title = string.format(" Image: %s:%s ", v(last_item.repository), v(last_item.tag))
