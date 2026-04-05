@@ -11,6 +11,60 @@ local view_modules = {
 
 local win_config_by_mode = ui_utils.win_config_by_mode
 
+local function create_footer_buf()
+	if state.footer_buf_id ~= nil and vim.api.nvim_buf_is_valid(state.footer_buf_id) then
+		return state.footer_buf_id
+	end
+
+	local buf = ui_utils.create_footer_buf("DockyardFooter")
+
+	state.footer_buf_id = buf
+	return buf
+end
+
+local function close_footer()
+	if state.footer_win_id ~= nil and vim.api.nvim_win_is_valid(state.footer_win_id) then
+		vim.api.nvim_win_close(state.footer_win_id, true)
+	end
+	state.footer_win_id = nil
+
+	if state.footer_buf_id ~= nil and vim.api.nvim_buf_is_valid(state.footer_buf_id) then
+		pcall(vim.api.nvim_buf_delete, state.footer_buf_id, { force = true })
+	end
+	state.footer_buf_id = nil
+end
+
+local function ensure_footer()
+	if state.mode ~= "full" or state.win_id == nil or not vim.api.nvim_win_is_valid(state.win_id) then
+		close_footer()
+		return
+	end
+
+	local buf = create_footer_buf()
+	if state.footer_win_id ~= nil and vim.api.nvim_win_is_valid(state.footer_win_id) then
+		vim.api.nvim_win_set_buf(state.footer_win_id, buf)
+	else
+		local prev = vim.api.nvim_get_current_win()
+		vim.api.nvim_set_current_win(state.win_id)
+		vim.cmd("botright split")
+		state.footer_win_id = vim.api.nvim_get_current_win()
+		vim.api.nvim_win_set_buf(state.footer_win_id, buf)
+		ui_utils.apply_footer_win_config(state.footer_win_id)
+		vim.api.nvim_set_option_value("winblend", 0, { win = state.footer_win_id })
+		vim.api.nvim_set_option_value("winfixbuf", true, { win = state.footer_win_id })
+		if prev ~= nil and vim.api.nvim_win_is_valid(prev) then
+			vim.api.nvim_set_current_win(prev)
+		end
+	end
+
+	pcall(vim.api.nvim_win_set_height, state.footer_win_id, 1)
+	pcall(function()
+		vim.api.nvim_win_call(state.footer_win_id, function()
+			vim.cmd("wincmd J")
+		end)
+	end)
+end
+
 ---@param on_done fun()|nil
 ---@param opts { force_update?: boolean }|nil
 local function update_active_view(on_done, opts)
@@ -63,6 +117,7 @@ local function open_with(mode, win_config_fn)
 		state.win_id = vim.api.nvim_open_win(state.buf_id, true, win_config_fn())
 		state.tab_id = nil
 	end
+	ensure_footer()
 	ui_utils.apply_win_config(state.win_id, mode)
 	keymaps.register_global(state.buf_id, {
 		close = M.close,
@@ -104,6 +159,7 @@ M.resize = function()
 	end
 
 	if state.mode == "full" then
+		ensure_footer()
 		update_active_view(nil)
 		return
 	end
@@ -149,6 +205,7 @@ M.close = function()
 	end
 
 	if state.mode == "full" then
+		close_footer()
 		if state.tab_id ~= nil and vim.api.nvim_tabpage_is_valid(state.tab_id) then
 			local current_tab = vim.api.nvim_get_current_tabpage()
 			if current_tab ~= state.tab_id then
@@ -160,6 +217,7 @@ M.close = function()
 		vim.api.nvim_win_close(state.win_id, true)
 	end
 	state.win_id = nil
+	close_footer()
 
 	if state.prev_win ~= nil and vim.api.nvim_win_is_valid(state.prev_win) then
 		vim.api.nvim_set_current_win(state.prev_win)

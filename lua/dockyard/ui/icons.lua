@@ -14,8 +14,8 @@ local ICONS = {
 		fallback = "○",
 	},
 	image = {
-		default = "󰏗",
-		fallback = "󰏗",
+		default = "󰆼",
+		fallback = "󰆼",
 	},
 	network = {
 		default = "󱂇",
@@ -23,7 +23,7 @@ local ICONS = {
 	},
 	view = {
 		containers = "󰏗",
-		images = "",
+		images = "󰆼",
 		networks = "󰖩",
 		fallback = "•",
 	},

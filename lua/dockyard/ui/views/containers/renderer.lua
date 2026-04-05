@@ -7,6 +7,7 @@ local config = require("dockyard.config")
 local table_view = require("dockyard.ui.components.table")
 local header = require("dockyard.ui.components.header")
 local navbar = require("dockyard.ui.components.navbar")
+local footer = require("dockyard.ui.components.footer")
 local ui_utils = require("dockyard.ui.utils")
 local highlights = require("dockyard.ui.highlights")
 local view_state = require("dockyard.ui.views.containers.state")
@@ -44,11 +45,66 @@ local function build_rows(items)
 	return rows
 end
 
+---@param items Container[]
+local function set_footer_items(items)
+	local stats = {
+		running = 0,
+		paused = 0,
+		restarting = 0,
+		exited = 0,
+		total = #items,
+	}
+
+	for _, item in ipairs(items) do
+		local status = item and item.status
+		if status == "running" then
+			stats.running = stats.running + 1
+		elseif status == "paused" then
+			stats.paused = stats.paused + 1
+		elseif status == "restarting" or status == "starting" or status == "removing" then
+			stats.restarting = stats.restarting + 1
+		elseif status == "exited" then
+			stats.exited = stats.exited + 1
+		end
+	end
+
+	local segments = {}
+	if stats.running > 0 then
+		table.insert(
+			segments,
+			{
+				text = string.format("%s %d", icons.container_icon("running"), stats.running),
+				hl = "DockyardRunning",
+			}
+		)
+	end
+	if stats.paused > 0 then
+		table.insert(
+			segments,
+			{ text = string.format("%s %d", icons.container_icon("paused"), stats.paused), hl = "DockyardPaused" }
+		)
+	end
+	if stats.restarting > 0 then
+		table.insert(segments, {
+			text = string.format("%s %d", icons.container_icon("restarting"), stats.restarting),
+			hl = "DockyardPending",
+		})
+	end
+	if stats.exited > 0 then
+		table.insert(
+			segments,
+			{ text = string.format("%s %d", icons.container_icon("exited"), stats.exited), hl = "DockyardStopped" }
+		)
+	end
+
+	footer.set_items(segments)
+end
+
 ---@param width number
+---@param items Container[]
 ---@return string[] lines, table line_map, table spans
-local function build_body(width)
+local function build_body(width, items)
 	view_state.last_rendered_at = vim.loop.hrtime()
-	local items = state.containers.get_items()
 	local rows = build_rows(items)
 
 	local columns = {
@@ -85,6 +141,7 @@ function M.render()
 	local lines = {}
 	local spans = {}
 	local width = current_width()
+	local items = state.containers.get_items()
 
 	ui_utils.append_block(lines, spans, header.render(ui_state.mode, width))
 
@@ -100,7 +157,7 @@ function M.render()
 	)
 	table.insert(lines, "")
 
-	local ok, body_lines, body_line_map, body_spans = pcall(build_body, width)
+	local ok, body_lines, body_line_map, body_spans = pcall(build_body, width, items)
 	if not ok then
 		local msg = "Dockyard render error: " .. tostring(body_lines)
 		vim.notify(msg, vim.log.levels.ERROR)
@@ -121,6 +178,7 @@ function M.render()
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	ui_utils.apply_spans(buf, spans)
 	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+	set_footer_items(items)
 end
 
 return M

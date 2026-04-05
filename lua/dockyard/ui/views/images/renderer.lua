@@ -7,6 +7,7 @@ local config = require("dockyard.config")
 local table_view = require("dockyard.ui.components.table")
 local header = require("dockyard.ui.components.header")
 local navbar = require("dockyard.ui.components.navbar")
+local footer = require("dockyard.ui.components.footer")
 local ui_utils = require("dockyard.ui.utils")
 local highlights = require("dockyard.ui.highlights")
 local view_state = require("dockyard.ui.views.images.state")
@@ -128,6 +129,22 @@ local function to_tree_rows(images, containers)
 	return rows
 end
 
+---@param images Image[]
+---@param containers Container[]
+local function set_footer_items(images, containers)
+	local attached = 0
+	for _, c in ipairs(containers) do
+		if c.image and c.image ~= "" then
+			attached = attached + 1
+		end
+	end
+
+	footer.set_items({
+		{ text = string.format("%s %d", icons.image_icon("default"), #images), hl = "DockyardImage" },
+		{ text = string.format("%s %d", icons.view_icon("containers"), attached), hl = "DockyardRunning" },
+	})
+end
+
 local function cell_hl(row, col)
 	if row.kind == "image" then
 		if col.key == "name" then
@@ -155,11 +172,10 @@ local function cell_hl(row, col)
 end
 
 ---@param width number
+---@param image Image[]
+---@param container Container[]
 ---@return string[] lines, table line_map, table spans
-local function build_body(width)
-	local image = data_state.images.get_items()
-	local container = data_state.containers.get_items()
-
+local function build_body(width, image, container)
 	local rows = to_tree_rows(image, container)
 
 	local lines, line_map, spans = table_view.render({
@@ -228,6 +244,8 @@ function M.render()
 	local lines = {}
 	local spans = {}
 	local width = current_width()
+	local image = data_state.images.get_items()
+	local container = data_state.containers.get_items()
 
 	ui_utils.append_block(lines, spans, header.render(ui_state.mode, width))
 
@@ -243,7 +261,7 @@ function M.render()
 	)
 	table.insert(lines, "")
 
-	local ok, body_lines, body_line_map, body_spans = pcall(build_body, width)
+	local ok, body_lines, body_line_map, body_spans = pcall(build_body, width, image, container)
 	if not ok then
 		local msg = "Dockyard render error: " .. tostring(body_lines)
 		vim.notify(msg, vim.log.levels.ERROR)
@@ -264,6 +282,7 @@ function M.render()
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	ui_utils.apply_spans(buf, spans)
 	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+	set_footer_items(image, container)
 end
 
 return M

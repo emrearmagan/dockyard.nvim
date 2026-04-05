@@ -21,7 +21,6 @@ function M.render(opts)
 
 	local actions = {
 		{ label = " Refresh (R) ", hl = "DockyardActionRefresh" },
-		{ label = " Help (?) ", hl = "DockyardActionHelp" },
 	}
 
 	local margin = 2

@@ -99,6 +99,33 @@ function M.create_buf()
 	return buf
 end
 
+function M.create_footer_buf(name)
+	local buf = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_name(buf, name or "DockyardFooter")
+	vim.api.nvim_set_option_value("buflisted", false, { buf = buf })
+	vim.api.nvim_set_option_value("buftype", "nofile", { buf = buf })
+	vim.api.nvim_set_option_value("swapfile", false, { buf = buf })
+	vim.api.nvim_set_option_value("bufhidden", "hide", { buf = buf })
+	vim.api.nvim_set_option_value("filetype", "dockyard-footer", { buf = buf })
+	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
+	return buf
+end
+
+function M.apply_footer_win_config(win)
+	vim.api.nvim_set_option_value("number", false, { win = win })
+	vim.api.nvim_set_option_value("relativenumber", false, { win = win })
+	vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
+	vim.api.nvim_set_option_value("statuscolumn", "", { win = win })
+	vim.api.nvim_set_option_value("foldcolumn", "0", { win = win })
+	vim.api.nvim_set_option_value("wrap", false, { win = win })
+	vim.api.nvim_set_option_value("cursorline", false, { win = win })
+	vim.api.nvim_set_option_value("winbar", " ", { win = win })
+	vim.api.nvim_set_option_value("statusline", "", { win = win })
+	vim.api.nvim_set_option_value("winfixheight", true, { win = win })
+	vim.api.nvim_set_option_value("winfixbuf", true, { win = win })
+	vim.api.nvim_set_option_value("winhighlight", "Normal:Normal,NormalFloat:Normal", { win = win })
+end
+
 function M.apply_win_config(win, mode)
 	vim.api.nvim_set_option_value("number", false, { win = win })
 	vim.api.nvim_set_option_value("relativenumber", false, { win = win })
