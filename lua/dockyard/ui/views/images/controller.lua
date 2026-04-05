@@ -1,10 +1,68 @@
 local M = {}
 
+local docker = require("dockyard.docker")
 local data_state = require("dockyard.state")
 local renderer = require("dockyard.ui.views.images.renderer")
 local state = require("dockyard.ui.views.images.state")
 local ui_state = require("dockyard.ui.state")
 local navigation = require("dockyard.ui.navigation")
+local spinner = require("dockyard.ui.components.spinner")
+local view_state = require("dockyard.ui.views.images.state")
+
+local POLL_INTERVAL_MS = 100
+
+---@return boolean
+local function is_images_view_active()
+	if ui_state.current_view ~= "images" then
+		return false
+	end
+	if ui_state.win_id == nil then
+		return false
+	end
+	return vim.api.nvim_win_is_valid(ui_state.win_id)
+end
+
+local function stop_polling()
+	if view_state.poll_spinner == nil then
+		return
+	end
+	view_state.poll_spinner:stop()
+	view_state.poll_spinner = nil
+	view_state.spinner_frame = nil
+end
+
+local function start_polling()
+	if view_state.poll_spinner ~= nil then
+		return
+	end
+
+	view_state.poll_spinner = spinner.create({
+		interval_ms = POLL_INTERVAL_MS,
+		on_tick = function(frame)
+			view_state.spinner_frame = frame
+			if not is_images_view_active() then
+				stop_polling()
+				return
+			end
+
+			data_state.containers.refresh({
+				silent = true,
+				on_success = function(items)
+					renderer.render()
+					if not docker.has_transitional_status(items) then
+						stop_polling()
+					end
+				end,
+				on_error = function()
+					renderer.render()
+				end,
+			})
+		end,
+	})
+
+	view_state.spinner_frame = view_state.poll_spinner:current_frame()
+	view_state.poll_spinner:start()
+end
 
 ---@param opts { focus_first?: boolean }|nil
 local function render(opts)
@@ -30,6 +88,11 @@ function M.update(on_done, opts)
 			silent = false,
 			on_success = function()
 				render({ focus_first = true })
+				if docker.has_transitional_status(data_state.containers.get_items()) then
+					start_polling()
+				else
+					stop_polling()
+				end
 				if on_done then
 					on_done()
 				end
@@ -45,6 +108,11 @@ function M.update(on_done, opts)
 	end
 
 	render()
+	if docker.has_transitional_status(data_state.containers.get_items()) then
+		start_polling()
+	else
+		stop_polling()
+	end
 	if on_done then
 		on_done()
 	end
@@ -73,6 +141,7 @@ function M.open_details(node)
 end
 
 function M.reset()
+	stop_polling()
 	state.reset()
 end
 

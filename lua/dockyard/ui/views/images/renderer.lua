@@ -1,5 +1,6 @@
 local M = {}
 
+local docker = require("dockyard.docker")
 local data_state = require("dockyard.state")
 local ui_state = require("dockyard.ui.state")
 local config = require("dockyard.config")
@@ -84,9 +85,13 @@ local function build_image_parent_row(img, containers)
 	}
 
 	for _, c in ipairs(children_src) do
+		local icon = icons.container_icon(c.status)
+		if view_state.spinner_frame and docker.is_transitional_status(c) then
+			icon = view_state.spinner_frame
+		end
 		table.insert(row.children, {
 			kind = "container",
-			name = status_icon(c.status) .. " " .. (c.name or c.id or "-"),
+			name = icon .. " " .. (c.name or c.id or "-"),
 			tag = "",
 			image_id = "",
 			size = "",
@@ -182,19 +187,23 @@ local function build_body(width)
 	for lnum, node in pairs(line_map) do
 		if node and node.kind == "image" then
 			local line = lines[lnum] or ""
-			local s = line:find("󰏗", 1, true)
+			local image_icon = icons.image_icon("default")
+			local s = line:find(image_icon, 1, true)
 			if s then
 				table.insert(spans, {
 					line = lnum - 1,
 					start_col = s - 1,
-					end_col = s - 1 + #"󰏗",
+					end_col = s - 1 + #image_icon,
 					hl_group = "DockyardImage",
 				})
 			end
 		elseif node and node.kind == "container" and node.item then
 			local line = lines[lnum] or ""
 			local st = node.item.status
-			local icon = status_icon(st)
+			local icon = icons.container_icon(st)
+			if view_state.spinner_frame and docker.is_transitional_status(node.item) then
+				icon = view_state.spinner_frame
+			end
 			local s = line:find(icon, 1, true)
 			if s then
 				table.insert(spans, {
