@@ -67,5 +67,6 @@ end
 M.containers = create_state(docker.list_containers)
 M.images = create_state(docker.list_images)
 M.networks = create_state(docker.list_networks)
+M.volumes = create_state(docker.list_volumes)
 
 return M

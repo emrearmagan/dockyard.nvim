@@ -8,6 +8,7 @@ local view_modules = {
 	containers = require("dockyard.ui.views.containers.init"),
 	images = require("dockyard.ui.views.images.init"),
 	networks = require("dockyard.ui.views.networks.init"),
+	volumes = require("dockyard.ui.views.volumes.init"),
 }
 
 local win_config_by_mode = ui_utils.win_config_by_mode

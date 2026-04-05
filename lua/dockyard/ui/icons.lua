@@ -21,10 +21,15 @@ local ICONS = {
 		default = "󱂇",
 		fallback = "󱂇",
 	},
+	volume = {
+		default = "󰋊",
+		fallback = "󰋊",
+	},
 	view = {
 		containers = "󰏗",
 		images = "󰆼",
 		networks = "󰖩",
+		volumes = "󰋊",
 		fallback = "•",
 	},
 	success = "✔",
@@ -59,6 +64,13 @@ end
 function M.network_icon(name)
 	local key = normalize(name)
 	return ICONS.network[key] or ICONS.network.fallback
+end
+
+---@param name string|nil
+---@return string
+function M.volume_icon(name)
+	local key = normalize(name)
+	return ICONS.volume[key] or ICONS.volume.fallback
 end
 
 ---@param name string|nil

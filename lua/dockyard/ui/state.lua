@@ -5,7 +5,7 @@
 --- @field tab_id number|nil ID of Dockyard tab in full mode
 --- @field footer_win_id number|nil ID of Dockyard footer window in full mode
 --- @field footer_buf_id number|nil ID of Dockyard footer buffer in full mode
---- @field current_view "containers"|"images"|"networks" The currently active view
+--- @field current_view "containers"|"images"|"networks"|"volumes" The currently active view
 --- @field line_map table A mapping of buffer line numbers to item IDs for the currents view
 --- @field mode "panel"|"full" The current display mode of the UI
 
