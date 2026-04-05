@@ -135,6 +135,10 @@ function M.open_details(item)
 	require("dockyard.ui.popups.container").open(item)
 end
 
+function M.toggle(node)
+	view_state.toggle(node.key)
+end
+
 function M.on_teardown()
 	stop_polling()
 end

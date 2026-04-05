@@ -46,6 +46,7 @@
 --- @class DockyardConfig
 --- @field display DisplayConfig Display settings
 --- @field loglens LogLensConfig LogLens settings
+--- @field detect_compose boolean Detect Docker Compose projects and group containers by project
 
 local M = {}
 
@@ -54,6 +55,7 @@ M.options = {
 	display = {
 		views = { "containers", "images", "networks", "volumes" },
 	},
+	detect_compose = false,
 	loglens = {
 		containers = {},
 	},

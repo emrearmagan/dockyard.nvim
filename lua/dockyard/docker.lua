@@ -78,6 +78,26 @@ end
 --- @field networks string
 --- @field created string
 --- @field created_since string
+--- @field labels string
+--- @field compose_project string|nil
+--- @field compose_service string|nil
+
+---Extract a label value from docker ps label string (key=val,key=val).
+---@param labels string|nil
+---@param key string
+---@return string|nil
+function M.extract_compose_label(labels, key)
+	if type(labels) ~= "string" or labels == "" then
+		return nil
+	end
+	for pair in labels:gmatch("([^,]+)") do
+		local k, val = pair:match("^(.-)=(.*)$")
+		if k == key and val and val ~= "" then
+			return val
+		end
+	end
+	return nil
+end
 
 --- @alias ContainerCallback fun(result: {ok: boolean, data: Container[], error?: string})
 function M.list_containers(callback)
@@ -92,7 +112,8 @@ function M.list_containers(callback)
 		'  "ports": {{json .Ports}},',
 		'  "networks": {{json .Networks}},',
 		'  "created": {{json .CreatedAt}},',
-		'  "created_since": {{json .RunningFor}}',
+		'  "created_since": {{json .RunningFor}},',
+		'  "labels": {{json .Labels}}',
 		"}",
 	}, "")
 
@@ -165,6 +186,8 @@ function M.list_containers(callback)
 				local ok, parsed = pcall(vim.json.decode, line)
 				if ok and parsed then
 					parsed.status = normalize_status(parsed.status, parsed.status_message)
+					parsed.compose_project = M.extract_compose_label(parsed.labels, "com.docker.compose.project")
+					parsed.compose_service = M.extract_compose_label(parsed.labels, "com.docker.compose.service")
 					table.insert(containers, parsed)
 				else
 					vim.notify("Failed to parse container line: " .. line, vim.log.levels.WARN)
