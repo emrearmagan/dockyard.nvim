@@ -1,11 +1,23 @@
 local M = {}
 
 local data_state = require("dockyard.state")
+local ui_state = require("dockyard.ui.state")
+local config = require("dockyard.config")
 local table_view = require("dockyard.ui.components.table")
+local header = require("dockyard.ui.components.header")
+local navbar = require("dockyard.ui.components.navbar")
+local navigation = require("dockyard.ui.navigation")
+local ui_utils = require("dockyard.ui.utils")
 local docker = require("dockyard.docker")
 local highlights = require("dockyard.ui.highlights")
+local view_state = require("dockyard.ui.views.networks.state")
 
-local expanded = {}
+local function current_width()
+	if ui_state.win_id ~= nil and vim.api.nvim_win_is_valid(ui_state.win_id) then
+		return vim.api.nvim_win_get_width(ui_state.win_id)
+	end
+	return vim.o.columns
+end
 
 local function ts(x)
 	local s = tostring(x or "")
@@ -87,7 +99,7 @@ local function build_network_parent_row(net, containers)
 		scope = net.scope or "-",
 		network_id = tostring(net.id or ""):sub(1, 12),
 		created = ts(net.created),
-		expanded = expanded[key],
+		expanded = view_state.expanded[key],
 		children = {},
 		_item = {
 			kind = "network",
@@ -151,7 +163,9 @@ local function cell_hl(row, col)
 	return "DockyardMuted"
 end
 
-function M.render(width)
+---@param width number
+---@return string[] lines, table line_map, table spans
+local function build_body(width)
 	local networks = data_state.networks.get_items()
 	local containers = data_state.containers.get_items()
 
@@ -210,20 +224,48 @@ function M.render(width)
 	return lines, line_map, spans
 end
 
-function M.toggle(node)
-	if not node or node.kind ~= "network" then
+function M.render()
+	local buf = ui_state.buf_id
+	if buf == nil or not vim.api.nvim_buf_is_valid(buf) then
 		return
 	end
 
-	local current = expanded[node.key]
-	if current == nil then
-		current = true
-	end
-	expanded[node.key] = not current
-end
+	local lines = {}
+	local spans = {}
+	local width = current_width()
 
-function M.reset()
-	expanded = {}
+	ui_utils.append_block(lines, spans, header.render(ui_state.mode, width))
+
+	local views = config.options.display.views or { "containers", "images", "networks" }
+	ui_utils.append_block(lines, spans, navbar.render({
+		width = width,
+		current_view = ui_state.current_view,
+		views = views,
+	}))
+	table.insert(lines, "")
+
+	local ok, body_lines, body_line_map, body_spans = pcall(build_body, width)
+	if not ok then
+		local msg = "Dockyard render error: " .. tostring(body_lines)
+		vim.notify(msg, vim.log.levels.ERROR)
+		body_lines = { msg }
+		body_line_map = {}
+		body_spans = {
+			{ line = 0, start_col = 0, end_col = #msg, hl_group = "DockyardStopped" },
+		}
+	end
+
+	local body_start = ui_utils.append_body(lines, spans, body_lines, body_spans)
+	ui_state.line_map = {}
+	for lnum, item in pairs(body_line_map or {}) do
+		ui_state.line_map[body_start + lnum] = item
+	end
+
+	vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
+	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+	ui_utils.apply_spans(buf, spans)
+	navigation.first()
+	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 end
 
 return M

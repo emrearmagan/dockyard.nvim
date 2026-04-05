@@ -1,4 +1,53 @@
 local M = {}
+local ns = vim.api.nvim_create_namespace("dockyard.ui")
+
+function M.append_block(lines, spans, block)
+	local base = #lines
+
+	for _, line in ipairs(block.lines or {}) do
+		table.insert(lines, line)
+	end
+
+	for _, span in ipairs(block.highlights or {}) do
+		table.insert(spans, {
+			line = base + span.line,
+			start_col = span.start_col,
+			end_col = span.end_col,
+			hl_group = span.hl_group,
+		})
+	end
+end
+
+function M.append_body(lines, spans, body_lines, body_spans)
+	local body_start = #lines
+
+	for _, line in ipairs(body_lines or {}) do
+		table.insert(lines, line)
+	end
+
+	for _, span in ipairs(body_spans or {}) do
+		table.insert(spans, {
+			line = body_start + span.line,
+			start_col = span.start_col,
+			end_col = span.end_col,
+			hl_group = span.hl_group,
+		})
+	end
+
+	return body_start
+end
+
+function M.apply_spans(buf, spans)
+	vim.api.nvim_buf_clear_namespace(buf, ns, 0, -1)
+
+	for _, span in ipairs(spans) do
+		vim.api.nvim_buf_set_extmark(buf, ns, span.line, span.start_col, {
+			end_row = span.line,
+			end_col = span.end_col,
+			hl_group = span.hl_group,
+		})
+	end
+end
 
 function M.panel_win_config()
 	local total_w = vim.o.columns

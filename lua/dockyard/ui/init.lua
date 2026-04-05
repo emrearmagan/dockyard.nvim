@@ -1,34 +1,48 @@
 local M = {}
 local state = require("dockyard.ui.state")
-local data_state = require("dockyard.state")
-local renderer = require("dockyard.ui.renderer")
 local keymaps = require("dockyard.ui.keymaps")
 local ui_utils = require("dockyard.ui.utils")
 local config = require("dockyard.config")
+local view_modules = {
+	containers = require("dockyard.ui.views.containers.init"),
+	images = require("dockyard.ui.views.images.init"),
+	networks = require("dockyard.ui.views.networks.init"),
+}
 
 local win_config_by_mode = ui_utils.win_config_by_mode
 
-local function unregister_view_keymaps()
-	if state.buf_id == nil then
-		return
+---@param on_done fun()|nil
+---@param opts { force_update?: boolean }|nil
+local function update_active_view(on_done, opts)
+	local module = view_modules[state.current_view]
+	if module and type(module.update) == "function" then
+		module.update(on_done, opts)
+	elseif on_done then
+		on_done()
 	end
-	keymaps.unregister_view(state.buf_id, state.current_view)
 end
 
-local function register_view_keymaps()
+local function teardown_active_view()
 	if state.buf_id == nil then
 		return
 	end
-	keymaps.register_view(state.buf_id, state.current_view)
+	local module = view_modules[state.current_view]
+	if module and type(module.teardown) == "function" then
+		module.teardown(state.buf_id)
+	end
+end
+
+local function setup_active_view()
+	if state.buf_id == nil then
+		return
+	end
+	local module = view_modules[state.current_view]
+	if module and type(module.setup) == "function" then
+		module.setup(state.buf_id, vim.notify)
+	end
 end
 
 local function open_with(mode, win_config_fn)
-	if M.is_open() then
-		vim.api.nvim_set_current_win(state.win_id)
-		renderer.render()
-		return state.win_id
-	end
-
 	state.prev_win = vim.api.nvim_get_current_win()
 	state.mode = mode
 
@@ -50,7 +64,6 @@ local function open_with(mode, win_config_fn)
 		state.tab_id = nil
 	end
 	ui_utils.apply_win_config(state.win_id, mode)
-	renderer.render()
 	keymaps.register_global(state.buf_id, {
 		close = M.close,
 		refresh = M.refresh,
@@ -60,43 +73,8 @@ local function open_with(mode, win_config_fn)
 			require("dockyard.ui.popups.help").open()
 		end,
 	})
-	register_view_keymaps()
-
-	data_state.containers.refresh({
-		silent = false,
-		on_success = function()
-			if M.is_open() then
-				renderer.render()
-			end
-		end,
-		on_error = function()
-			if M.is_open() then
-				renderer.render()
-			end
-		end,
-	})
 
 	return state.win_id
-end
-
-local function refresh_current_view_data(on_done)
-	local refreshers = {
-		containers = data_state.containers,
-		images = data_state.images,
-		networks = data_state.networks,
-	}
-
-	local target = refreshers[state.current_view]
-	if target == nil then
-		on_done()
-		return
-	end
-
-	target.refresh({
-		silent = false,
-		on_success = on_done,
-		on_error = on_done,
-	})
 end
 
 local function cycle_view(step)
@@ -114,10 +92,10 @@ local function cycle_view(step)
 	end
 
 	local next_idx = ((idx - 1 + step) % #views) + 1
-	unregister_view_keymaps()
+	teardown_active_view()
 	state.current_view = views[next_idx]
-	register_view_keymaps()
-	M.refresh()
+	setup_active_view()
+	update_active_view(nil)
 end
 
 M.resize = function()
@@ -126,13 +104,13 @@ M.resize = function()
 	end
 
 	if state.mode == "full" then
-		renderer.render()
+		update_active_view(nil)
 		return
 	end
 
 	local config_fn = win_config_by_mode[state.mode] or ui_utils.panel_win_config
 	vim.api.nvim_win_set_config(state.win_id, config_fn())
-	renderer.render()
+	update_active_view(nil)
 end
 
 M.is_open = function()
@@ -140,11 +118,29 @@ M.is_open = function()
 end
 
 M.open = function()
-	return open_with("panel", ui_utils.panel_win_config)
+	if M.is_open() then
+		vim.api.nvim_set_current_win(state.win_id)
+		update_active_view(nil)
+		return state.win_id
+	end
+
+	local win_id = open_with("panel", ui_utils.panel_win_config)
+	setup_active_view()
+	update_active_view(nil, { force_update = true })
+	return win_id
 end
 
 M.open_full = function()
-	return open_with("full", ui_utils.full_win_config)
+	if M.is_open() then
+		vim.api.nvim_set_current_win(state.win_id)
+		update_active_view(nil)
+		return state.win_id
+	end
+
+	local win_id = open_with("full", ui_utils.full_win_config)
+	setup_active_view()
+	update_active_view(nil, { force_update = true })
+	return win_id
 end
 
 M.close = function()
@@ -171,7 +167,7 @@ M.close = function()
 
 	state.prev_win = nil
 	state.tab_id = nil
-	unregister_view_keymaps()
+	teardown_active_view()
 	if state.buf_id ~= nil then
 		keymaps.unregister_global(state.buf_id)
 	end
@@ -182,11 +178,7 @@ M.refresh = function()
 		return
 	end
 
-	refresh_current_view_data(function()
-		if M.is_open() then
-			renderer.render()
-		end
-	end)
+	update_active_view(nil, { force_update = true })
 end
 
 M.next_view = function()
