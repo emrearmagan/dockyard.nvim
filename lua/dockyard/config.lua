@@ -52,7 +52,7 @@ local M = {}
 ---@type DockyardConfig
 M.options = {
 	display = {
-		views = { "containers", "images", "networks" },
+		views = { "containers", "images", "networks", "volumes" },
 	},
 	loglens = {
 		containers = {},

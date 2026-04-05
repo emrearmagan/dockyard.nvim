@@ -42,6 +42,13 @@ local sections = {
 		},
 	},
 	{
+		section = "Volume Actions",
+		maps = {
+			{ key = "d", desc = "Remove selected volume" },
+			{ key = "o", desc = "Open mountpoint in Vim (if accessible)" },
+		},
+	},
+	{
 		section = "General",
 		maps = {
 			{ key = "R", desc = "Refresh current view" },

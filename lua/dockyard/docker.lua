@@ -258,6 +258,59 @@ M.list_networks = function(callback)
 	end)
 end
 
+--- @class Volume
+--- @field name string
+--- @field driver string
+--- @field mountpoint string
+--- @field scope string
+--- @field labels string
+
+--- @param callback fun(result: {ok: boolean, data: Volume[], error?: string})
+M.list_volumes = function(callback)
+	local format = table.concat({
+		"{",
+		'  "name": {{json .Name}},',
+		'  "driver": {{json .Driver}},',
+		'  "mountpoint": {{json .Mountpoint}},',
+		'  "scope": {{json .Scope}},',
+		'  "labels": {{json .Labels}}',
+		"}",
+	}, "")
+
+	run_docker_command({ "volume", "ls", "--format", format }, function(result)
+		if not result.ok then
+			callback(result)
+			return
+		end
+
+		--- @type Volume[]
+		local volumes = {}
+		if result.data ~= "" then
+			for line in result.data:gmatch("[^\r\n]+") do
+				local ok, parsed = pcall(vim.json.decode, line)
+				if ok and parsed then
+					table.insert(volumes, parsed)
+				end
+			end
+		end
+
+		callback({ ok = true, data = volumes })
+	end)
+end
+
+--- @param volume_name string
+--- @param action "rm"
+--- @param callback fun(result: {ok: boolean, error?: string})
+M.volume_action = function(volume_name, action, callback)
+	run_docker_command({ "volume", action, volume_name }, function(result)
+		if result.ok then
+			callback({ ok = true })
+		else
+			callback({ ok = false, error = result.error })
+		end
+	end)
+end
+
 --- @param container_id string
 --- @param action "start"|"stop"|"restart"|"rm"
 --- @param callback fun(result: {ok: boolean, error?: string})
@@ -352,7 +405,7 @@ M.container_stats = function(container_id, callback)
 	end)
 end
 
---- @param type "container"|"image"|"network"
+--- @param type "container"|"image"|"network"|"volume"
 --- @param id string
 --- @param callback fun(result: {ok: boolean, data?: table, error?: string})
 M.inspect = function(type, id, callback)
