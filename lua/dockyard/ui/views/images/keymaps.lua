@@ -4,19 +4,20 @@ local controller = require("dockyard.ui.views.images.controller")
 local actions = require("dockyard.ui.actions.images")
 local ui_state = require("dockyard.ui.state")
 
-local function get_node_at_cursor()
+---@return ({ kind: "image", item: Image, key: string }|{ kind: "container", item: Container, key: string })|nil
+local function get_typed_node_at_cursor()
 	local line = vim.api.nvim_win_get_cursor(0)[1]
-	return ui_state.line_map[line]
-end
-
-local function get_image_node_at_cursor()
-	local node = get_node_at_cursor()
-	if not node then
+	local node = ui_state.line_map[line]
+	if not node or not node.item then
 		return nil
 	end
 
 	if node.kind == "image" then
-		return node
+		return { kind = "image", item = node.item, key = node.key }
+	end
+
+	if node.kind == "container" then
+		return { kind = "container", item = node.item, key = node.key }
 	end
 
 	return nil
@@ -27,26 +28,9 @@ end
 ---@param hooks { on_toggle?: fun(), on_remove_done?: fun(res: { ok: boolean, error?: string }|nil, ok: boolean), on_prune_done?: fun(res: { ok: boolean, error?: string }|nil, ok: boolean) }|nil
 function M.setup(buf, notify, hooks)
 	local opts = { buffer = buf, silent = true, nowait = true }
-	local function open_details_at_cursor()
-		local node = get_node_at_cursor()
-		if node then
-			controller.open_details(node)
-		end
-	end
-
-	vim.keymap.set("n", "<CR>", function()
-		local node = get_image_node_at_cursor()
-		if node then
-			controller.toggle(node)
-			if hooks and hooks.on_toggle then
-				hooks.on_toggle()
-			end
-		end
-	end, opts)
-
 	vim.keymap.set("n", "d", function()
-		local node = get_image_node_at_cursor()
-		if node then
+		local node = get_typed_node_at_cursor()
+		if node and node.kind == "image" then
 			actions.remove(node.item, function(res, ok)
 				if hooks and hooks.on_remove_done then
 					hooks.on_remove_done(res, ok)
@@ -63,7 +47,22 @@ function M.setup(buf, notify, hooks)
 		end, notify)
 	end, opts)
 
-	vim.keymap.set("n", "K", open_details_at_cursor, opts)
+	vim.keymap.set("n", "<CR>", function()
+		local node = get_typed_node_at_cursor()
+		if node and node.kind == "image" then
+			controller.toggle(node)
+			if hooks and hooks.on_toggle then
+				hooks.on_toggle()
+			end
+		end
+	end, opts)
+
+	vim.keymap.set("n", "K", function()
+		local node = get_typed_node_at_cursor()
+		if node then
+			controller.open_details(node)
+		end
+	end, opts)
 end
 
 ---@param buf number
