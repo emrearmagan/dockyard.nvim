@@ -6,7 +6,6 @@ local config = require("dockyard.config")
 local table_view = require("dockyard.ui.components.table")
 local header = require("dockyard.ui.components.header")
 local navbar = require("dockyard.ui.components.navbar")
-local navigation = require("dockyard.ui.navigation")
 local ui_utils = require("dockyard.ui.utils")
 local docker = require("dockyard.docker")
 local highlights = require("dockyard.ui.highlights")
@@ -237,11 +236,15 @@ function M.render()
 	ui_utils.append_block(lines, spans, header.render(ui_state.mode, width))
 
 	local views = config.options.display.views or { "containers", "images", "networks" }
-	ui_utils.append_block(lines, spans, navbar.render({
-		width = width,
-		current_view = ui_state.current_view,
-		views = views,
-	}))
+	ui_utils.append_block(
+		lines,
+		spans,
+		navbar.render({
+			width = width,
+			current_view = ui_state.current_view,
+			views = views,
+		})
+	)
 	table.insert(lines, "")
 
 	local ok, body_lines, body_line_map, body_spans = pcall(build_body, width)
@@ -264,7 +267,6 @@ function M.render()
 	vim.api.nvim_set_option_value("modifiable", true, { buf = buf })
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	ui_utils.apply_spans(buf, spans)
-	navigation.first()
 	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
 end
 

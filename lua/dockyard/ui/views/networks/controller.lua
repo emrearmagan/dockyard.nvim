@@ -4,13 +4,19 @@ local data_state = require("dockyard.state")
 local renderer = require("dockyard.ui.views.networks.renderer")
 local state = require("dockyard.ui.views.networks.state")
 local ui_state = require("dockyard.ui.state")
+local navigation = require("dockyard.ui.navigation")
 
-local function render()
+---@param opts { focus_first?: boolean }|nil
+local function render(opts)
 	if ui_state.current_view ~= "networks" then
 		return
 	end
 	if ui_state.win_id ~= nil and vim.api.nvim_win_is_valid(ui_state.win_id) then
 		renderer.render()
+
+		if opts and opts.focus_first == true then
+			navigation.first()
+		end
 	end
 end
 
@@ -23,13 +29,13 @@ function M.update(on_done, opts)
 		data_state.networks.refresh({
 			silent = false,
 			on_success = function()
-				render()
+				render({ focus_first = true })
 				if on_done then
 					on_done()
 				end
 			end,
 			on_error = function()
-				render()
+				render({ focus_first = true })
 				if on_done then
 					on_done()
 				end
@@ -51,17 +57,17 @@ function M.toggle(node)
 	state.toggle(node.key)
 end
 
----@param node table|nil
+---@param node ({ kind: "network", item: Network, key: string }|{ kind: "container", item: Container, key: string })|nil
 function M.open_details(node)
 	if not node then
 		return
 	end
 	if node.kind == "network" then
-		require("dockyard.ui.popups.network").open(node)
+		require("dockyard.ui.popups.network").open(node.item)
 		return
 	end
 	if node.kind == "container" then
-		require("dockyard.ui.popups.container").open(node.item or node)
+		require("dockyard.ui.popups.container").open(node.item)
 	end
 end
 
