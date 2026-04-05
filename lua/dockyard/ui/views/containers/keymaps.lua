@@ -92,6 +92,11 @@ function M.setup(buf, notify, hooks)
 			controller.open_details(item.item)
 		end
 	end, opts)
+
+	vim.keymap.set("n", "p", function()
+		local node = get_item_at_cursor()
+		if node then
+			require("dockyard.ui.panel").open(node.item)
 		end
 	end, opts)
 end
@@ -106,6 +111,7 @@ function M.teardown(buf)
 	pcall(vim.keymap.del, "n", "T", { buffer = buf })
 	pcall(vim.keymap.del, "n", "L", { buffer = buf })
 	pcall(vim.keymap.del, "n", "K", { buffer = buf })
+	pcall(vim.keymap.del, "n", "p", { buffer = buf })
 	controller.on_teardown()
 end
 

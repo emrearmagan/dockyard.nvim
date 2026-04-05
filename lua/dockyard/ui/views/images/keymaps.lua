@@ -63,6 +63,13 @@ function M.setup(buf, notify, hooks)
 			controller.open_details(node)
 		end
 	end, opts)
+
+	vim.keymap.set("n", "p", function()
+		local node = get_typed_node_at_cursor()
+		if node then
+			require("dockyard.ui.panel").open(node)
+		end
+	end, opts)
 end
 
 ---@param buf number
@@ -71,6 +78,7 @@ function M.teardown(buf)
 	pcall(vim.keymap.del, "n", "d", { buffer = buf })
 	pcall(vim.keymap.del, "n", "P", { buffer = buf })
 	pcall(vim.keymap.del, "n", "K", { buffer = buf })
+	pcall(vim.keymap.del, "n", "p", { buffer = buf })
 end
 
 return M
