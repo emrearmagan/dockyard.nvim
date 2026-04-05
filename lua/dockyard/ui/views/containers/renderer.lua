@@ -28,6 +28,7 @@ local function status_icon(status)
 	if status == "restarting" then
 		return "◍"
 	end
+
 	return "○"
 end
 
@@ -36,13 +37,13 @@ local function build_rows(items)
 	for _, c in ipairs(items) do
 		local st = docker.to_status(c.status)
 		table.insert(rows, {
-			icon = status_icon(st),
+			icon = icon,
 			name = c.name or "-",
 			image = c.image or "-",
-			status = c.status or "-",
+			status = c.status_message or "-",
 			ports = c.ports or "-",
 			created = c.created_since or "-",
-			_status = st,
+			_status = c.status,
 			_item = {
 				kind = "container",
 				item = c,
@@ -97,11 +98,15 @@ function M.render()
 	ui_utils.append_block(lines, spans, header.render(ui_state.mode, width))
 
 	local views = config.options.display.views or { "containers", "images", "networks" }
-	ui_utils.append_block(lines, spans, navbar.render({
-		width = width,
-		current_view = ui_state.current_view,
-		views = views,
-	}))
+	ui_utils.append_block(
+		lines,
+		spans,
+		navbar.render({
+			width = width,
+			current_view = ui_state.current_view,
+			views = views,
+		})
+	)
 	table.insert(lines, "")
 
 	local ok, body_lines, body_line_map, body_spans = pcall(build_body, width)

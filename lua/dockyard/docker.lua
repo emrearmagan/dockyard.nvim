@@ -2,24 +2,37 @@ local M = {}
 
 local job = require("plenary.job")
 
----Normalize Docker status text into a stable semantic status key.
----@param raw string|nil
----@return "running"|"paused"|"restarting"|"dead"|"stopped"
-function M.to_status(raw)
-	raw = tostring(raw or ""):lower()
-	if raw:find("up", 1, true) then
-		return "running"
+---Detect whether an container is in an in-progress transition.
+---@param container Container|nil
+---@return boolean
+function M.is_transitional_status(container)
+	if not container or not container.status_message then
+		return false
 	end
-	if raw:find("paused", 1, true) then
-		return "paused"
+
+	-- if container.name and container.name:find("backend", 1, true) then
+	-- 	return true
+	-- end
+	-- return false
+
+	if container.status == "restarting" or container.status == "starting" or container.status == "removing" then
+		return true
 	end
-	if raw:find("restarting", 1, true) then
-		return "restarting"
+
+	return false
+end
+
+---Detect whether any container is in an in-progress transition.
+---@param containers Container[]|nil
+---@return boolean
+function M.has_transitional_status(containers)
+	for _, container in ipairs(containers or {}) do
+		if M.is_transitional_status(container) then
+			return true
+		end
 	end
-	if raw:find("dead", 1, true) then
-		return "dead"
-	end
-	return "stopped"
+
+	return false
 end
 
 local function run_docker_command(args, callback)
@@ -43,12 +56,24 @@ local function run_docker_command(args, callback)
 	}):start()
 end
 
+---@alias ContainerStatus
+---| "created"
+---| "running"
+---| "paused"
+---| "starting"
+---| "restarting"
+---| "removing"
+---| "exited"
+---| "dead"
+---| "unknown"
+
 --- @class Container
 --- @field id string
 --- @field name string
 --- @field image string
 --- @field command string
---- @field status string
+--- @field status ContainerStatus
+--- @field status_message string
 --- @field ports string
 --- @field networks string
 --- @field created string
@@ -62,7 +87,8 @@ function M.list_containers(callback)
 		'  "name": {{json .Names}},',
 		'  "image": {{json .Image}},',
 		'  "command": {{json .Command}},',
-		'  "status": {{json .Status}},',
+		'  "status": {{json .State}},',
+		'  "status_message": {{json .Status}},',
 		'  "ports": {{json .Ports}},',
 		'  "networks": {{json .Networks}},',
 		'  "created": {{json .CreatedAt}},',
@@ -76,13 +102,72 @@ function M.list_containers(callback)
 			return
 		end
 
+		local valid_status = {
+			created = true,
+			running = true,
+			paused = true,
+			restarting = true,
+			removing = true,
+			exited = true,
+			dead = true,
+		}
+
+		local function normalize_status(status, status_message)
+			if not valid_status[status] then
+				return "unknown"
+			end
+
+			local msg = status_message or ""
+
+			if status == "restarting" then
+				return "restarting"
+			end
+
+			if status == "paused" then
+				return "paused"
+			end
+
+			if status == "removing" then
+				return "removing"
+			end
+
+			if status == "dead" then
+				return "dead"
+			end
+
+			if status == "created" then
+				return "created"
+			end
+
+			if status == "exited" then
+				return "exited"
+			end
+
+			if status == "running" then
+				if msg:find("(health: starting)", 1, true) or msg:find("(starting)", 1, true) then
+					return "starting"
+				end
+
+				if msg:find("(unhealthy)", 1, true) then
+					return "dead"
+				end
+
+				return "running"
+			end
+
+			return "unknown"
+		end
+
 		--- @type Container[]
 		local containers = {}
 		if result.data ~= "" then
 			for line in result.data:gmatch("[^\r\n]+") do
 				local ok, parsed = pcall(vim.json.decode, line)
 				if ok and parsed then
+					parsed.status = normalize_status(parsed.status, parsed.status_message)
 					table.insert(containers, parsed)
+				else
+					vim.notify("Failed to parse container line: " .. line, vim.log.levels.WARN)
 				end
 			end
 		end

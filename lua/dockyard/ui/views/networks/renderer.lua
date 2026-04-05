@@ -7,7 +7,6 @@ local table_view = require("dockyard.ui.components.table")
 local header = require("dockyard.ui.components.header")
 local navbar = require("dockyard.ui.components.navbar")
 local ui_utils = require("dockyard.ui.utils")
-local docker = require("dockyard.docker")
 local highlights = require("dockyard.ui.highlights")
 local view_state = require("dockyard.ui.views.networks.state")
 
@@ -108,10 +107,9 @@ local function build_network_parent_row(net, containers)
 	}
 
 	for _, c in ipairs(children_src) do
-		local st = docker.to_status(c.status)
 		table.insert(row.children, {
 			kind = "container",
-			name = status_icon(st) .. " " .. (c.name or c.id or "-"),
+			name = status_icon(c.status) .. " " .. (c.name or c.id or "-"),
 			driver = "",
 			scope = "",
 			network_id = tostring(c.id or ""):sub(1, 12),
@@ -206,7 +204,7 @@ local function build_body(width)
 			end
 		elseif node and node.kind == "container" and node.item then
 			local line = lines[lnum] or ""
-			local st = docker.to_status(node.item.status)
+			local st = node.item.status
 			local icon = status_icon(st)
 			local s = line:find(icon, 1, true)
 			if s then

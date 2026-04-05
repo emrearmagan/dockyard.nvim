@@ -142,7 +142,7 @@ local function build_rows(data, stats)
 	rows.header = {
 		{ label = "Name", value = v(data.Name):gsub("^/", ""), value_hl = "DockyardName" },
 		{ label = "ID", value = v(data.Id):sub(1, 12), value_hl = "DockyardRunning" },
-		{ label = "Status", value = status:upper() .. " ", value_hl = highlights.status_hl(docker.to_status(status)) },
+		{ label = "Status", value = status:upper() .. " ", value_hl = highlights.status_hl(status) },
 		{ label = "Image", value = config.Image, value_hl = "DockyardImage" },
 		{ label = "Created", value = ts(data.Created), value_hl = "DockyardMuted" },
 		{ label = "Started", value = ts(state.StartedAt), value_hl = "DockyardMuted" },

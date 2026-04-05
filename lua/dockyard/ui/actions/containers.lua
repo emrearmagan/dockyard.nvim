@@ -30,8 +30,8 @@ function M.toggle_start_stop(item, on_done, notify)
 		notify("Dockyard: no container selected", vim.log.levels.WARN)
 		return
 	end
-	local status = docker.to_status(item.status)
-	run_action(item, status == "running" and "stop" or "start", on_done, notify)
+
+	run_action(item, item.status == "running" and "stop" or "start", on_done, notify)
 end
 
 ---@param item Container|nil

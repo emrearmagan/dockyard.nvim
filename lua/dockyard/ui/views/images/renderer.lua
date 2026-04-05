@@ -7,7 +7,6 @@ local table_view = require("dockyard.ui.components.table")
 local header = require("dockyard.ui.components.header")
 local navbar = require("dockyard.ui.components.navbar")
 local ui_utils = require("dockyard.ui.utils")
-local docker = require("dockyard.docker")
 local highlights = require("dockyard.ui.highlights")
 local view_state = require("dockyard.ui.views.images.state")
 
@@ -97,10 +96,9 @@ local function build_image_parent_row(img, containers)
 	}
 
 	for _, c in ipairs(children_src) do
-		local st = docker.to_status(c.status)
 		table.insert(row.children, {
 			kind = "container",
-			name = status_icon(st) .. " " .. (c.name or c.id or "-"),
+			name = status_icon(c.status) .. " " .. (c.name or c.id or "-"),
 			tag = "",
 			image_id = "",
 			size = "",
@@ -207,7 +205,7 @@ local function build_body(width)
 			end
 		elseif node and node.kind == "container" and node.item then
 			local line = lines[lnum] or ""
-			local st = docker.to_status(node.item.status)
+			local st = node.item.status
 			local icon = status_icon(st)
 			local s = line:find(icon, 1, true)
 			if s then
@@ -237,11 +235,15 @@ function M.render()
 	ui_utils.append_block(lines, spans, header.render(ui_state.mode, width))
 
 	local views = config.options.display.views or { "containers", "images", "networks" }
-	ui_utils.append_block(lines, spans, navbar.render({
-		width = width,
-		current_view = ui_state.current_view,
-		views = views,
-	}))
+	ui_utils.append_block(
+		lines,
+		spans,
+		navbar.render({
+			width = width,
+			current_view = ui_state.current_view,
+			views = views,
+		})
+	)
 	table.insert(lines, "")
 
 	local ok, body_lines, body_line_map, body_spans = pcall(build_body, width)

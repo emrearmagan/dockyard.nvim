@@ -28,6 +28,11 @@ end
 ---@field interval_ms integer
 ---@field timer userdata|nil
 ---@field on_tick fun(frame: string)|nil
+---@field current_frame fun(self: SpinnerInstance): string
+---@field text fun(self: SpinnerInstance, text?: string): string
+---@field start fun(self: SpinnerInstance)
+---@field stop fun(self: SpinnerInstance)
+---@field is_running fun(self: SpinnerInstance): boolean
 
 ---@param opts? { interval_ms?: integer, on_tick?: fun(frame: string) }
 ---@return SpinnerInstance
