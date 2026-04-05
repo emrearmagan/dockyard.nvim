@@ -34,8 +34,12 @@ end
 
 local function build_rows(items)
 	local rows = {}
+	local spinner_frame = view_state.spinner_frame
 	for _, c in ipairs(items) do
-		local st = docker.to_status(c.status)
+		local icon = status_icon(c.status)
+		if spinner_frame and docker.is_transitional_status(c) then
+			icon = spinner_frame
+		end
 		table.insert(rows, {
 			icon = icon,
 			name = c.name or "-",

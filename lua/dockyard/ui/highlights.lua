@@ -24,6 +24,7 @@ local groups = {
 	DockyardPaused = { fg = palette.yellow, bold = true },
 	DockyardRestarting = { fg = palette.blue, bold = true },
 	DockyardDead = { fg = palette.muted, bold = true },
+	DockyardPending = { fg = palette.orange, bold = true },
 
 	DockyardHeader = { bg = palette.bg_soft, fg = palette.blue, bold = true },
 	DockyardTitle = { fg = palette.blue, bold = true },
@@ -52,18 +53,18 @@ function M.setup()
 	end
 end
 
----@param status string|nil
+---@param status ContainerStatus|nil
 ---@return string
 function M.status_hl(status)
-	local s = string.lower(tostring(status or ""))
-
-	if s == "running" then
+	if status == "restarting" or status == "starting" or status == "removing" then
+		return "DockyardPending"
+	elseif status == "running" then
 		return "DockyardRunning"
-	elseif s == "paused" then
+	elseif status == "paused" then
 		return "DockyardPaused"
-	elseif s == "restarting" then
+	elseif status == "restarting" then
 		return "DockyardRestarting"
-	elseif s == "dead" then
+	elseif status == "dead" then
 		return "DockyardDead"
 	end
 

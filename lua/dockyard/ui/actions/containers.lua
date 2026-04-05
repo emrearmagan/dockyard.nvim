@@ -4,7 +4,7 @@ local M = {}
 
 ---@param item Container
 ---@param action string
----@param on_done fun(res: { ok: boolean, error?: string }|nil, ok: boolean)|nil
+---@param on_done fun(res: { ok: boolean, error: string? }|nil, ok: boolean)|nil
 ---@param notify fun(msg: string, level?: integer)
 local function run_action(item, action, on_done, notify)
 	docker.container_action(item.id, action, function(res)

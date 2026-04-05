@@ -264,7 +264,7 @@ end
 M.container_action = function(container_id, action, callback)
 	run_docker_command({ action, container_id }, function(result)
 		if result.ok then
-			callback({ ok = true })
+			callback({ ok = true, error = nil })
 		else
 			callback({ ok = false, error = result.error })
 		end
