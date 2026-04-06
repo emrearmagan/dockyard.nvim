@@ -1,4 +1,4 @@
-local docker = require("dockyard.docker")
+local docker = require("dockyard.core.docker")
 local table_view = require("dockyard.ui.components.table")
 local generic_popup = require("dockyard.ui.popups.popup")
 

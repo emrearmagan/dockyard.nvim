@@ -1,9 +1,9 @@
-local state = require("dockyard.loglens.state")
-local renderer = require("dockyard.loglens.ui.renderer")
+local state = require("dockyard.core.stream.loglens.state")
+local renderer = require("dockyard.ui.loglens.renderer")
 local ui_state = require("dockyard.ui.state")
-local keymaps = require("dockyard.loglens.keymaps")
-local window = require("dockyard.loglens.ui.window")
-local log_core = require("dockyard.loglens.core")
+local keymaps = require("dockyard.ui.loglens.keymaps")
+local window = require("dockyard.ui.loglens.window")
+local log_core = require("dockyard.core.stream.loglens.core")
 
 local M = {}
 
@@ -67,7 +67,7 @@ function M.open(container)
 					vim.notify("LogLens: no entry at cursor", vim.log.levels.WARN)
 					return
 				end
-				require("dockyard.loglens.ui.popup").open(entry)
+				require("dockyard.ui.loglens.popup").open(entry)
 			end,
 		})
 	end

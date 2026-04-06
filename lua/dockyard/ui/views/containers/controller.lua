@@ -1,6 +1,6 @@
 local M = {}
 
-local docker = require("dockyard.docker")
+local docker = require("dockyard.core.docker")
 local data_state = require("dockyard.state")
 local renderer = require("dockyard.ui.views.containers.renderer")
 local ui_state = require("dockyard.ui.state")
@@ -127,7 +127,7 @@ end
 
 ---@param item Container
 function M.open_logs(item)
-	require("dockyard.loglens").open(item)
+	require("dockyard.ui.loglens").open(item)
 end
 
 ---@param item Container

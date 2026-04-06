@@ -1,4 +1,4 @@
-local docker = require("dockyard.docker")
+local docker = require("dockyard.core.docker")
 
 local M = {}
 

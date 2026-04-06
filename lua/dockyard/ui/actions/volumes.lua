@@ -1,5 +1,5 @@
 local M = {}
-local docker = require("dockyard.docker")
+local docker = require("dockyard.core.docker")
 
 ---@param item Volume|nil
 ---@param on_done fun(res: { ok: boolean, error: string? }|nil, ok: boolean)|nil

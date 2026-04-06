@@ -4,7 +4,7 @@ local panel_state = require("dockyard.ui.panel.state")
 local chips = require("dockyard.ui.panel.components.chips")
 local tabs = require("dockyard.ui.panel.components.tabs")
 local table_renderer = require("dockyard.ui.components.table")
-local docker = require("dockyard.docker")
+local docker = require("dockyard.core.docker")
 
 local TABS = {
 	{ key = "config", label = "Configuration" },

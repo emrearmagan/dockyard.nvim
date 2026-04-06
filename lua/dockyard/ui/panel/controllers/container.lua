@@ -6,13 +6,13 @@ local chips = require("dockyard.ui.panel.components.chips")
 local tabs = require("dockyard.ui.panel.components.tabs")
 local icons = require("dockyard.ui.icons")
 local highlights = require("dockyard.ui.highlights")
-local log_core = require("dockyard.loglens.core")
+local log_core = require("dockyard.core.stream.loglens.core")
 local table_renderer = require("dockyard.ui.components.table")
-local highlighter = require("dockyard.loglens.ui.highlight")
+local highlighter = require("dockyard.ui.loglens.highlight")
 local chart = require("dockyard.ui.components.chart")
-local stats_stream = require("dockyard.ui.panel.stats_stream")
-local top_stream = require("dockyard.ui.panel.top_stream")
-local docker = require("dockyard.docker")
+local stats_stream = require("dockyard.core.stream.stats.stream")
+local top_stream = require("dockyard.core.stream.top.stream")
+local docker = require("dockyard.core.docker")
 
 local TABS = {
 	{ key = "logs", label = "Logs" },
@@ -33,6 +33,7 @@ local state = {
 	inspect_loading = false,
 }
 
+---@return string
 function M.get_tab()
 	if not state.current_tab then
 		state.current_tab = TABS[1].key
@@ -642,13 +643,13 @@ function M.render(width)
 				hl_group = highlights.status_hl(item.status),
 			},
 			{
-				text = string.format("󰆼 %s", item.image or "-"),
+				text = string.format("%s %s", icons.image_icon("image"), item.image or "-"),
 				hl_group = "DockyardImage",
 			},
 		}
 		if item.ports and item.ports ~= "" then
 			table.insert(chip_items, {
-				text = string.format("󰖩 %s", item.ports),
+				text = string.format("%s %s", icons.view_icon("network"), item.ports),
 				hl_group = "DockyardPorts",
 			})
 		end

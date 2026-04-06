@@ -1,6 +1,6 @@
 local M = {}
 
-local docker = require("dockyard.docker")
+local docker = require("dockyard.core.docker")
 local data_state = require("dockyard.state")
 local ui_state = require("dockyard.ui.state")
 local config = require("dockyard.config")

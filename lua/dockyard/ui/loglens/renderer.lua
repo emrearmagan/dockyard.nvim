@@ -1,8 +1,8 @@
 local M = {}
 
-local header = require("dockyard.loglens.ui.header")
+local header = require("dockyard.ui.loglens.header")
 local table_renderer = require("dockyard.ui.components.table")
-local highlighter = require("dockyard.loglens.ui.highlight")
+local highlighter = require("dockyard.ui.loglens.highlight")
 local ns = vim.api.nvim_create_namespace("dockyard.loglens")
 
 ---@param state LogLensState

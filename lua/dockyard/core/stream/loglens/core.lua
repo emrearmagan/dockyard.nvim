@@ -1,6 +1,6 @@
-local loglens_config = require("dockyard.loglens.config")
-local parser_factory = require("dockyard.loglens.parsers")
-local stream = require("dockyard.loglens.parsers.stream")
+local loglens_config = require("dockyard.core.stream.loglens.config")
+local parser_factory = require("dockyard.core.stream.loglens.parsers")
+local stream = require("dockyard.core.stream.loglens.parsers.stream")
 
 local M = {}
 

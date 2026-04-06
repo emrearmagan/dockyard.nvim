@@ -1,6 +1,6 @@
 local M = {}
 
-local docker = require("dockyard.docker")
+local docker = require("dockyard.core.docker")
 
 ---@class TopStreamInstance
 ---@field container_id string|nil

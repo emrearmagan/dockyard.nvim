@@ -1,5 +1,5 @@
-local text_parser = require("dockyard.loglens.parsers.text")
-local json_parser = require("dockyard.loglens.parsers.json")
+local text_parser = require("dockyard.core.stream.loglens.parsers.text")
+local json_parser = require("dockyard.core.stream.loglens.parsers.json")
 
 local M = {}
 

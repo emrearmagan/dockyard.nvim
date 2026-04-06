@@ -1,6 +1,6 @@
 local M = {}
 
-local docker = require("dockyard.docker")
+local docker = require("dockyard.core.docker")
 
 ---@class StatsSnapshot
 ---@field cpu number
