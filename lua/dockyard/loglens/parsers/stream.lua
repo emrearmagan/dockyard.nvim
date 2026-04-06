@@ -1,12 +1,27 @@
 local M = {}
 
+---@class StreamHandle
+---@field stop fun()
+
 ---@param container Container
 ---@param source LogSource
 ---@param tail number
 ---@return string[]
 local function build_command(container, source, tail)
 	if source.path and source.path ~= "" then
-		return { "docker", "exec", container.id, "tail", "-n", tostring(tail), "-f", source.path }
+		-- Prefix with `echo $$` to print the shell PID before replacing the shell
+		-- process with `exec tail` (which keeps the same PID). We capture this PID
+		-- from the first stdout line so we can explicitly kill the tail process on
+		-- stop — Docker does not signal exec'd processes when the host connection drops.
+		-- See: https://github.com/nvim-lua/plenary.nvim/issues/328
+		return {
+			"docker",
+			"exec",
+			container.id,
+			"sh",
+			"-c",
+			string.format("echo $$; exec tail -n %d -f %s", tail, source.path),
+		}
 	end
 
 	return { "docker", "logs", "--follow", "--tail", tostring(tail), container.id }
@@ -29,11 +44,23 @@ end
 ---@param tail number
 ---@param on_chunk fun(chunk: string)
 ---@param on_exit fun()|nil
----@return number|nil
+---@return StreamHandle|nil
 function M.start(container, source, tail, on_chunk, on_exit)
+	local inner_pid = nil
+	local is_exec = source.path and source.path ~= ""
 	local cmd = build_command(container, source, tail)
+
 	local job_id = vim.fn.jobstart(cmd, {
 		on_stdout = function(_, data)
+			if is_exec and not inner_pid then
+				for i, line in ipairs(data) do
+					if line:match("^%d+$") then
+						inner_pid = tonumber(line)
+						table.remove(data, i)
+						break
+					end
+				end
+			end
 			emit_chunk(data, on_chunk)
 		end,
 		on_stderr = function(_, data)
@@ -50,14 +77,14 @@ function M.start(container, source, tail, on_chunk, on_exit)
 		return nil
 	end
 
-	return job_id
-end
-
----@param job_id number|nil
-function M.stop(job_id)
-	if job_id and job_id > 0 then
-		pcall(vim.fn.jobstop, job_id)
-	end
+	return {
+		stop = function()
+			pcall(vim.fn.jobstop, job_id)
+			if inner_pid then
+				vim.fn.jobstart({ "docker", "exec", container.id, "kill", "-9", tostring(inner_pid) })
+			end
+		end,
+	}
 end
 
 return M
