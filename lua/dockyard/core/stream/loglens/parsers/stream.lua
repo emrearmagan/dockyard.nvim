@@ -1,5 +1,7 @@
 local M = {}
 
+local jobs = require("dockyard.core.jobs")
+
 ---@class StreamHandle
 ---@field stop fun()
 
@@ -13,6 +15,8 @@ local function build_command(container, source, tail)
 		-- process with `exec tail` (which keeps the same PID). We capture this PID
 		-- from the first stdout line so we can explicitly kill the tail process on
 		-- stop — Docker does not signal exec'd processes when the host connection drops.
+    --
+    -- Just in case we also use the jobs.lua to track running processes, so we have a fallback cleanup mechanism if the PID capture fails for some reason.
 		-- See: https://github.com/nvim-lua/plenary.nvim/issues/328
 		return {
 			"docker",
@@ -47,6 +51,7 @@ end
 ---@return StreamHandle|nil
 function M.start(container, source, tail, on_chunk, on_exit)
 	local inner_pid = nil
+	local untrack = nil
 	local is_exec = source.path and source.path ~= ""
 	local cmd = build_command(container, source, tail)
 
@@ -56,6 +61,7 @@ function M.start(container, source, tail, on_chunk, on_exit)
 				for i, line in ipairs(data) do
 					if line:match("^%d+$") then
 						inner_pid = tonumber(line)
+						untrack = jobs.track(container.id, inner_pid)
 						table.remove(data, i)
 						break
 					end
@@ -79,6 +85,7 @@ function M.start(container, source, tail, on_chunk, on_exit)
 
 	return {
 		stop = function()
+			if untrack then untrack() end
 			pcall(vim.fn.jobstop, job_id)
 			if inner_pid then
 				vim.fn.jobstart({ "docker", "exec", container.id, "kill", "-9", tostring(inner_pid) })
