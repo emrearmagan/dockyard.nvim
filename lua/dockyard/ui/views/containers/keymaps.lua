@@ -88,7 +88,7 @@ function M.setup(buf, notify, hooks)
 
 	vim.keymap.set("n", "K", function()
 		local item = get_item_at_cursor()
-		if item then
+		if item and item.kind == "container" then
 			controller.open_details(item.item)
 		end
 	end, opts)

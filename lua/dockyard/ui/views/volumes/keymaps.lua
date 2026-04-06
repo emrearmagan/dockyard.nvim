@@ -30,10 +30,10 @@ function M.setup(buf, notify, hooks)
 		end
 	end, opts)
 
-	vim.keymap.set("n", "o", function()
+	vim.keymap.set("n", "K", function()
 		local node = get_volume_node_at_cursor()
 		if node then
-			controller.open_in_vim(node)
+			controller.open_details(node)
 		end
 	end, opts)
 
@@ -48,7 +48,7 @@ end
 ---@param buf number
 function M.teardown(buf)
 	pcall(vim.keymap.del, "n", "d", { buffer = buf })
-	pcall(vim.keymap.del, "n", "o", { buffer = buf })
+	pcall(vim.keymap.del, "n", "K", { buffer = buf })
 	pcall(vim.keymap.del, "n", "p", { buffer = buf })
 end
 

@@ -132,7 +132,7 @@ end
 
 ---@param item Container
 function M.open_details(item)
-	require("dockyard.ui.popups.container").open(item)
+	require("dockyard.ui.popups.hover").open({ kind = "container", item = item })
 end
 
 function M.toggle(node)

@@ -50,30 +50,11 @@ function M.update(on_done, opts)
 end
 
 ---@param node { kind: string, item: Volume }|nil
-function M.open_in_vim(node)
+function M.open_details(node)
 	if not node or node.kind ~= "volume" then
 		return
 	end
-
-	local vol = node.item
-	local path = vol and vol.mountpoint
-	if not path or path == "" then
-		vim.notify("Dockyard: volume has no mountpoint", vim.log.levels.WARN)
-		return
-	end
-
-	-- Only open if the path actually exists on the host filesystem
-	local stat = vim.loop.fs_stat(path)
-	if not stat then
-		vim.notify("Dockyard: mountpoint not accessible on host: " .. path, vim.log.levels.WARN)
-		return
-	end
-
-	if stat.type == "directory" then
-		vim.cmd("edit " .. vim.fn.fnameescape(path))
-	else
-		vim.cmd("edit " .. vim.fn.fnameescape(path))
-	end
+	require("dockyard.ui.popups.hover").open(node)
 end
 
 return M

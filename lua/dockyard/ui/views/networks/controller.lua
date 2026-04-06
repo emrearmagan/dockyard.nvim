@@ -130,13 +130,7 @@ function M.open_details(node)
 	if not node then
 		return
 	end
-	if node.kind == "network" then
-		require("dockyard.ui.popups.network").open(node.item)
-		return
-	end
-	if node.kind == "container" then
-		require("dockyard.ui.popups.container").open(node.item)
-	end
+	require("dockyard.ui.popups.hover").open(node)
 end
 
 function M.reset()

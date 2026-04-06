@@ -7,11 +7,16 @@ local resize_group = vim.api.nvim_create_augroup("DockyardHelpPopupResize", { cl
 
 local sections = {
 	{
-		section = "Navigation",
+		section = "General",
 		maps = {
 			{ key = "j / k", desc = "Move cursor down / up" },
 			{ key = "Tab / S-Tab", desc = "Next / Previous Tab" },
 			{ key = "p", desc = "Open detail panel" },
+			{ key = "R", desc = "Refresh current view" },
+			{ key = "q", desc = "Close Dockyard" },
+			{ key = "K", desc = "Open info popup" },
+      { key = "<CR>", desc = "Expand / Collapse image" },
+			{ key = "?", desc = "Toggle this help popup" },
 		},
 	},
 	{
@@ -28,8 +33,6 @@ local sections = {
 	{
 		section = "Image Actions",
 		maps = {
-			{ key = "<CR>", desc = "Expand / Collapse image" },
-			{ key = "K", desc = "Open image popup" },
 			{ key = "d", desc = "Remove selected image" },
 			{ key = "P", desc = "Prune dangling images" },
 		},
@@ -37,8 +40,6 @@ local sections = {
 	{
 		section = "Network Actions",
 		maps = {
-			{ key = "<CR>", desc = "Expand / Collapse network" },
-			{ key = "K", desc = "Open network popup" },
 			{ key = "d", desc = "Remove selected network" },
 		},
 	},
@@ -46,15 +47,6 @@ local sections = {
 		section = "Volume Actions",
 		maps = {
 			{ key = "d", desc = "Remove selected volume" },
-			{ key = "o", desc = "Open mountpoint in Vim (if accessible)" },
-		},
-	},
-	{
-		section = "General",
-		maps = {
-			{ key = "R", desc = "Refresh current view" },
-			{ key = "q", desc = "Close Dockyard" },
-			{ key = "?", desc = "Toggle this help popup" },
 		},
 	},
 	{
