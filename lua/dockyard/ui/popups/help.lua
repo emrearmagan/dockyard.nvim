@@ -11,6 +11,7 @@ local sections = {
 		maps = {
 			{ key = "j / k", desc = "Move cursor down / up" },
 			{ key = "Tab / S-Tab", desc = "Next / Previous Tab" },
+			{ key = "p", desc = "Open detail panel" },
 		},
 	},
 	{

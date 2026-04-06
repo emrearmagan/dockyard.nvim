@@ -45,6 +45,9 @@ local groups = {
 	DockyardBorder = { link = "FloatBorder" },
 	DockyardDim = { fg = palette.muted },
 	DockyardNormal = { link = "Normal" },
+
+	DockyardChartCPU = { fg = palette.blue },
+	DockyardChartMemory = { fg = palette.green },
 }
 
 function M.setup()

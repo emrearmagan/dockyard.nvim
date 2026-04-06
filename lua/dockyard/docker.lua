@@ -462,6 +462,18 @@ M.container_stats = function(container_id, callback)
 	end)
 end
 
+--- @param container_id string
+--- @param callback fun(result: {ok: boolean, data?: string, error?: string})
+M.container_top = function(container_id, callback)
+	run_docker_command({ "top", container_id }, function(result)
+		if not result.ok then
+			callback(result)
+			return
+		end
+		callback({ ok = true, data = result.data })
+	end)
+end
+
 --- @param type "container"|"image"|"network"|"volume"
 --- @param id string
 --- @param callback fun(result: {ok: boolean, data?: table, error?: string})

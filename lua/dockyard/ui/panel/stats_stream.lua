@@ -11,8 +11,7 @@ local docker = require("dockyard.docker")
 ---@field history StatsSnapshot[]
 ---@field latest ContainerStats|nil
 ---@field max_history number
----@field _timer number|nil
----@field _polling boolean
+---@field _stop_fn fun()|nil
 ---@field start fun(self: StatsStreamInstance, container_id: string)
 ---@field stop fun(self: StatsStreamInstance)
 ---@field cpu_data fun(self: StatsStreamInstance): number[]
@@ -21,51 +20,19 @@ local docker = require("dockyard.docker")
 ---@field cpu_peak fun(self: StatsStreamInstance): number
 ---@field mem_peak fun(self: StatsStreamInstance): number
 
----@param opts? { on_update?: fun(), max_history?: number, interval?: number }
+---@param opts? { on_update?: fun(), max_history?: number }
 ---@return StatsStreamInstance
 function M.create(opts)
 	opts = opts or {}
-	local interval = opts.interval or 2000
 
-	---@class StatsStreamInstance
+	---@type StatsStreamInstance
 	local instance = {
 		container_id = nil,
 		history = {},
 		latest = nil,
 		max_history = opts.max_history or 60,
-		_timer = nil,
-		_polling = false,
+		_stop_fn = nil,
 	}
-
-	local function poll()
-		if not instance.container_id or instance._polling then
-			return
-		end
-
-		instance._polling = true
-		docker.container_stats(instance.container_id, function(result)
-			instance._polling = false
-
-			if not result.ok or not result.data then
-				return
-			end
-
-			instance.latest = result.data
-
-			local cpu = tonumber((result.data.cpu_perc or ""):match("([%d%.]+)")) or 0
-			local mem = tonumber((result.data.mem_perc or ""):match("([%d%.]+)")) or 0
-
-			table.insert(instance.history, { cpu = cpu, mem = mem })
-
-			while #instance.history > instance.max_history do
-				table.remove(instance.history, 1)
-			end
-
-			if opts.on_update then
-				opts.on_update()
-			end
-		end)
-	end
 
 	---@param container_id string
 	function instance:start(container_id)
@@ -74,19 +41,29 @@ function M.create(opts)
 		self.history = {}
 		self.latest = nil
 
-		poll()
+		self._stop_fn = docker.stream_stats(container_id, function(data)
+			self.latest = data
 
-		self._timer = vim.fn.timer_start(interval, function()
-			poll()
-		end, { ["repeat"] = -1 })
+			local cpu = tonumber((data.cpu_perc or ""):match("([%d%.]+)")) or 0
+			local mem = tonumber((data.mem_perc or ""):match("([%d%.]+)")) or 0
+
+			table.insert(self.history, { cpu = cpu, mem = mem })
+			while #self.history > self.max_history do
+				table.remove(self.history, 1)
+			end
+
+			if opts.on_update then
+				opts.on_update()
+			end
+		end)
 	end
 
 	function instance:stop()
-		if self._timer then
-			vim.fn.timer_stop(self._timer)
-			self._timer = nil
+		if self._stop_fn then
+			self._stop_fn()
+			self._stop_fn = nil
 		end
-		self._polling = false
+		self.container_id = nil
 	end
 
 	---@return number[]
@@ -109,13 +86,9 @@ function M.create(opts)
 
 	---@return number
 	function instance:cpu_avg()
-		if #self.history == 0 then
-			return 0
-		end
+		if #self.history == 0 then return 0 end
 		local sum = 0
-		for _, h in ipairs(self.history) do
-			sum = sum + h.cpu
-		end
+		for _, h in ipairs(self.history) do sum = sum + h.cpu end
 		return sum / #self.history
 	end
 
@@ -123,9 +96,7 @@ function M.create(opts)
 	function instance:cpu_peak()
 		local peak = 0
 		for _, h in ipairs(self.history) do
-			if h.cpu > peak then
-				peak = h.cpu
-			end
+			if h.cpu > peak then peak = h.cpu end
 		end
 		return peak
 	end
@@ -134,9 +105,7 @@ function M.create(opts)
 	function instance:mem_peak()
 		local peak = 0
 		for _, h in ipairs(self.history) do
-			if h.mem > peak then
-				peak = h.mem
-			end
+			if h.mem > peak then peak = h.mem end
 		end
 		return peak
 	end
