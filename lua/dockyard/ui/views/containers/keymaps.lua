@@ -96,7 +96,7 @@ function M.setup(buf, notify, hooks)
 	vim.keymap.set("n", "p", function()
 		local node = get_item_at_cursor()
 		if node then
-			require("dockyard.ui.panel").open(node.item)
+			require("dockyard.ui.panel").open(node)
 		end
 	end, opts)
 end
