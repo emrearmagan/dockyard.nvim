@@ -20,20 +20,14 @@ function M.render(tab_defs, active_tab, width, padding_x)
 		local part = string.format(" %s ", tab.label or "")
 		line = line .. part
 
-		---@type string|nil
-		local hl = "DockyardMuted"
-		if tab.key == active_tab then
-			hl = nil
-		end
+		local hl = tab.key == active_tab and "DockyardTabActive" or "DockyardTabInactive"
+		table.insert(spans, {
+			line = 0,
+			start_col = col,
+			end_col = col + #part,
+			hl_group = hl,
+		})
 
-		if hl then
-			table.insert(spans, {
-				line = 0,
-				start_col = col,
-				end_col = col + #part,
-				hl_group = hl,
-			})
-		end
 		col = col + #part
 
 		if i < #tab_defs then
