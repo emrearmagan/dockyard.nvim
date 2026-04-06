@@ -9,13 +9,12 @@ local sections = {
 	{
 		section = "General",
 		maps = {
-			{ key = "j / k", desc = "Move cursor down / up" },
 			{ key = "Tab / S-Tab", desc = "Next / Previous Tab" },
 			{ key = "p", desc = "Open detail panel" },
 			{ key = "R", desc = "Refresh current view" },
 			{ key = "q", desc = "Close Dockyard" },
 			{ key = "K", desc = "Open info popup" },
-      { key = "<CR>", desc = "Expand / Collapse image" },
+			{ key = "<CR>", desc = "Expand / Collapse" },
 			{ key = "?", desc = "Toggle this help popup" },
 		},
 	},
@@ -28,6 +27,7 @@ local sections = {
 			{ key = "d", desc = "Remove container" },
 			{ key = "K", desc = "Open inspect popup" },
 			{ key = "T", desc = "Open Terminal" },
+			{ key = "L", desc = "Open Logs" },
 		},
 	},
 	{
@@ -54,6 +54,9 @@ local sections = {
 		maps = {
 			{ key = ":Dockyard", desc = "Open fullscreen mode" },
 			{ key = ":DockyardFloat", desc = "Open floating mode" },
+			{ key = ":DockyardBuild", desc = "Build image from Dockerfile" },
+			{ key = ":DockyardRun", desc = "Run compose service" },
+			{ key = ":DockyardRunAll", desc = "Run all compose services" },
 		},
 	},
 }

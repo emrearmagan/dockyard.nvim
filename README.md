@@ -220,7 +220,9 @@ Each rule supports:
 | Global | `R` | Refresh current tab |
 | Global | `<Tab>` / `<S-Tab>` | Next / previous tab |
 | Global | `j` / `k` | Move cursor |
+| Global | `p` | Open detail panel |
 | Global | `K` | Open details popup |
+| Global | `<CR>` | Expand / Collapse |
 | Global | `?` | Open help popup |
 | Containers | `s` | Toggle start / stop |
 | Containers | `x` | Stop container |
@@ -228,11 +230,10 @@ Each rule supports:
 | Containers | `d` | Remove container |
 | Containers | `T` | Open shell |
 | Containers | `L` | Open LogLens |
-| Images | `<CR>` | Expand / collapse |
 | Images | `d` | Remove image |
 | Images | `P` | Prune dangling images |
-| Networks | `<CR>` | Expand / collapse |
 | Networks | `d` | Remove network |
+| Volumes | `d` | Remove volume |
 
 ### LogLens
 
