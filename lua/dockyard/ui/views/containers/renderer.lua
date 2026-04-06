@@ -296,17 +296,8 @@ end
 ---@param items Container[]
 ---@return string[] lines, table line_map, table spans
 local function build_body(width, items)
-	if config.options.detect_compose then
-		local has_compose = false
-		for _, c in ipairs(items) do
-			if c.compose_project then
-				has_compose = true
-				break
-			end
-		end
-		if has_compose then
-			return build_body_compose(width, items)
-		end
+	if ui_state.current_view == "compose" then
+		return build_body_compose(width, items)
 	end
 	return build_body_flat(width, items)
 end

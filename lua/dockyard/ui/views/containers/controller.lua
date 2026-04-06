@@ -12,7 +12,7 @@ local POLL_INTERVAL_MS = 100
 
 ---@return boolean
 local function is_containers_view_active()
-	if ui_state.current_view ~= "containers" then
+	if ui_state.current_view ~= "containers" and ui_state.current_view ~= "compose" then
 		return false
 	end
 	if ui_state.win_id == nil then
@@ -65,7 +65,7 @@ end
 
 ---@param opts { focus_first?: boolean }|nil
 local function render(opts)
-	if ui_state.current_view ~= "containers" then
+	if ui_state.current_view ~= "containers" and ui_state.current_view ~= "compose" then
 		return
 	end
 	if ui_state.win_id ~= nil and vim.api.nvim_win_is_valid(ui_state.win_id) then

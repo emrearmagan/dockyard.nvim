@@ -27,6 +27,7 @@ local ICONS = {
 	},
 	view = {
 		containers = "󰏗",
+		compose = "󰡨",
 		images = "󰆼",
 		networks = "󰖩",
 		volumes = "󰋊",

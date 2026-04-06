@@ -16,6 +16,7 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 - [x] Inspect and manage containers
 - [x] Inspect and manage images
 - [x] Inspect and manage networks
+- [x] Docker Compose grouping via the `compose` view
 - [x] Open shell sessions inside containers
 - [x] Stream and inspect logs
 - [ ] Navigate and search the file tree inside a container
@@ -66,6 +67,11 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 
 ```lua
 require("dockyard").setup({
+  display = {
+    -- Available views: "containers", "compose", "images", "networks", "volumes"
+    -- "compose" shows containers grouped by Docker Compose project
+    views = { "containers", "images", "networks", "volumes" },
+  },
   loglens = {
     containers = {
       -- Override highlights only

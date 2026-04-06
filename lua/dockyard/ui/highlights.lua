@@ -31,7 +31,7 @@ local groups = {
 	DockyardTabActive = { bg = palette.blue, fg = "#1e1e2e", bold = true },
 	DockyardTabInactive = { bg = palette.tab_inactive_bg, fg = palette.tab_inactive_fg },
 	DockyardAction = { fg = palette.fg },
-	DockyardActionRefresh = { bg = palette.green, fg = "#1e1e2e", bold = true },
+	DockyardActionRefresh = { fg = palette.blue, bold = true },
 	DockyardHelpKey = { fg = palette.orange, bold = true },
 	DockyardColumnHeader = { fg = palette.column_header, bold = true },
 	DockyardName = { fg = palette.blue },

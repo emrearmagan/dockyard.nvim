@@ -45,14 +45,14 @@
 --- @field containers? table<string, ContainerLogConfig> Per-container configurations
 --- @field default_highlights? LogHighlightRule[]        Fallback highlights for all containers (overrides built-in defaults)
 
--- TODO: Currently not used
+--- @alias DockyardView "containers"|"compose"|"images"|"networks"|"volumes"
+
 --- @class DisplayConfig
---- @field views string[] Order of tabs
+--- @field views? DockyardView[] Ordered list of views shown in the navbar
 
 --- @class DockyardConfig
--- - @field display DisplayConfig Display settings
---- @field loglens LogLensConfig LogLens settings
---- @field detect_compose boolean Detect Docker Compose projects and group containers by project
+--- @field display? DisplayConfig Display settings
+--- @field loglens? LogLensConfig LogLens settings
 
 local M = {}
 
@@ -61,7 +61,6 @@ M.options = {
 	display = {
 		views = { "containers", "images", "networks", "volumes" },
 	},
-	detect_compose = false,
 	loglens = {
 		containers = {},
 	},

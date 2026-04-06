@@ -4,8 +4,10 @@ local footer = require("dockyard.ui.components.footer")
 local keymaps = require("dockyard.ui.keymaps")
 local ui_utils = require("dockyard.ui.utils")
 local config = require("dockyard.config")
+local containers_view = require("dockyard.ui.views.containers.init")
 local view_modules = {
-	containers = require("dockyard.ui.views.containers.init"),
+	containers = containers_view,
+	compose = containers_view,
 	images = require("dockyard.ui.views.images.init"),
 	networks = require("dockyard.ui.views.networks.init"),
 	volumes = require("dockyard.ui.views.volumes.init"),
@@ -107,6 +109,11 @@ local function setup_active_view()
 end
 
 local function open_with(mode, win_config_fn)
+	local views = config.options.display.views or { "containers", "images", "networks", "volumes" }
+	if #views > 0 and not vim.tbl_contains(views, state.current_view) then
+		state.current_view = views[1]
+	end
+
 	state.prev_win = vim.api.nvim_get_current_win()
 	state.mode = mode
 
