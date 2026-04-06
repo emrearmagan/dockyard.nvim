@@ -101,7 +101,7 @@ local function ensure_log_stream(container)
 	stop_log_stream()
 
 	state.stream_instance = log_core.create({
-		max_lines = 500,
+		max_lines = 100,
 		on_entries = function(_)
 			if state.current_tab == "logs" then
 				local panel = require("dockyard.ui.panel")
@@ -220,8 +220,9 @@ local function entries_to_rows(entries)
 end
 
 ---@param width number
+---@param height number|nil
 ---@return string[] lines, table[] spans
-local function render_logs(width)
+local function render_logs(width, height)
 	local node = panel_state.current_node
 	if not node or not node.item then
 		return { "", "  No container selected" }, {}
@@ -240,8 +241,21 @@ local function render_logs(width)
 		return lines, spans
 	end
 
+	-- chips(1) + blank(1) + tabs(2) + table header+divider(2) = 6 fixed lines
+	local entries = inst.entries
+	if height and height > 6 then
+		local max_rows = height - 6
+		if #entries > max_rows then
+			local sliced = {}
+			for i = #entries - max_rows + 1, #entries do
+				table.insert(sliced, entries[i])
+			end
+			entries = sliced
+		end
+	end
+
 	local source = inst.active_source or {}
-	local rows = entries_to_rows(inst.entries)
+	local rows = entries_to_rows(entries)
 	local columns = infer_columns(rows, source._order)
 	if #columns == 0 then
 		return { "", "  No log data" }, {}
@@ -611,8 +625,9 @@ end
 -- Main render
 
 ---@param width number
+---@param height number|nil
 ---@return string[] lines, table[] spans
-function M.render(width)
+function M.render(width, height)
 	local node = panel_state.current_node
 	if not node or node.kind ~= "container" then
 		return {}, {}
@@ -680,7 +695,7 @@ function M.render(width)
 	-- Tab content
 	local content_lines, content_spans = {}, {}
 	if active_tab == "logs" then
-		content_lines, content_spans = render_logs(width)
+		content_lines, content_spans = render_logs(width, height)
 	elseif active_tab == "stats" then
 		content_lines, content_spans = render_stats(width)
 	elseif active_tab == "top" then

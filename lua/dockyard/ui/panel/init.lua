@@ -171,6 +171,7 @@ function M.render()
 	end
 
 	local width = vim.api.nvim_win_get_width(win)
+	local height = vim.api.nvim_win_get_height(win)
 	local lines = {}
 	local spans = {}
 
@@ -179,7 +180,7 @@ function M.render()
 	else
 		local ctrl = get_active_controller()
 		if ctrl and type(ctrl.render) == "function" then
-			lines, spans = ctrl.render(width)
+			lines, spans = ctrl.render(width, height)
 		else
 			lines = { "", "Uuups....: " .. tostring(panel_state.current_node.kind) }
 		end
