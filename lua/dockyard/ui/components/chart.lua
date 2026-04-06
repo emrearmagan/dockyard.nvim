@@ -1,24 +1,9 @@
 local M = {}
 
--- Braille Unicode block starts at U+2800.
--- Each character encodes 8 dots in a 2x4 grid:
---
---   Left  Right
---   1(01) 4(08)   <- row 0 (top)
---   2(02) 5(10)   <- row 1
---   3(04) 6(20)   <- row 2
---   7(40) 8(80)   <- row 3 (bottom)
---
--- Two data points per terminal column: left side = even index, right side = odd index.
--- Vertical resolution: height_rows * 4 dot rows.
+local BRAILLE_BASE = 0x2800
 
-local BRAILLE_OFFSET = 0x2800
-
--- DOT_BIT[side+1][dot_row+1]: bit value for (side=0 left|1 right, dot_row=0 top..3 bottom)
-local DOT_BIT = {
-	{ 0x01, 0x02, 0x04, 0x40 }, -- left column
-	{ 0x08, 0x10, 0x20, 0x80 }, -- right column
-}
+local LEFT_DOT = { 1, 2, 4, 64 } -- dot offsets for left  column, rows 0-3
+local RIGHT_DOT = { 8, 16, 32, 128 } -- dot offsets for right column, rows 0-3
 
 ---@class ChartRenderOpts
 ---@field data number[]
@@ -56,18 +41,15 @@ function M.render(opts)
 	local data = opts.data or {}
 	local height = opts.height or 6
 	local margin = opts.margin or 1
-	local hl_group = opts.hl_group or "Normal"
+	local hl = opts.hl_group or "Normal"
 	local pad = string.rep(" ", margin)
 	local width = opts.width or 40
 
-	-- Layout: margin + 4(y-label) + │ + chart_cols
+	-- Layout: margin + 4 (y-label) + │ + chart columns
 	local sep = "│"
-	local chart_cols = width - (margin * 2) - 4 - 1
-	if chart_cols < 3 then
-		chart_cols = 3
-	end
+	local chart_cols = math.max(3, width - (margin * 2) - 4 - 1)
 
-	-- Min-max normalization
+	-- Min / max
 	local min_val = opts.min
 	local max_val = opts.max
 	if not min_val or not max_val then
@@ -91,7 +73,6 @@ function M.render(opts)
 		end
 	end
 
-	-- Flat data: expand range symmetrically so the line appears centered
 	if max_val <= min_val then
 		local center = min_val
 		local epsilon = math.max(math.abs(center) * 0.1, 0.001)
@@ -101,7 +82,7 @@ function M.render(opts)
 
 	local range = max_val - min_val
 
-	-- 2 data points per terminal column (braille left + right)
+	-- Two data points per terminal column (left and right side of each braille char)
 	local data_width = chart_cols * 2
 	local sampled = {}
 	if #data == 0 then
@@ -127,12 +108,11 @@ function M.render(opts)
 	local dot_height = height * 4
 	local data_dot = {}
 	for i = 1, data_width do
-		local v = sampled[i] or min_val
-		local norm = math.max(0, math.min(1, (v - min_val) / range))
+		local norm = math.max(0, math.min(1, (sampled[i] - min_val) / range))
 		data_dot[i] = math.floor((1 - norm) * (dot_height - 1) + 0.5)
 	end
 
-	-- Build braille bit grid: grid[col][row] = combined dot bits
+	-- Build the offset grid: grid[col][row] accumulates dot offsets
 	local grid = {}
 	for c = 1, chart_cols do
 		grid[c] = {}
@@ -143,20 +123,16 @@ function M.render(opts)
 
 	for data_col = 1, data_width do
 		local char_col = math.ceil(data_col / 2)
-		local side = (data_col - 1) % 2 -- 0=left, 1=right
+		local dot_offsets = (data_col % 2 == 1) and LEFT_DOT or RIGHT_DOT
 
 		local curr = data_dot[data_col]
 		local prev = data_col > 1 and data_dot[data_col - 1] or curr
 
-		-- Fill all dot rows between prev and curr to draw a connected line
-		local from_dot = math.min(prev, curr)
-		local to_dot = math.max(prev, curr)
-
-		for abs_dot = from_dot, to_dot do
+		for abs_dot = math.min(prev, curr), math.max(prev, curr) do
 			local char_row = math.floor(abs_dot / 4)
 			local dot_row = abs_dot % 4
 			if char_row >= 0 and char_row < height then
-				grid[char_col][char_row] = grid[char_col][char_row] + DOT_BIT[side + 1][dot_row + 1]
+				grid[char_col][char_row] = grid[char_col][char_row] + dot_offsets[dot_row + 1]
 			end
 		end
 	end
@@ -164,18 +140,14 @@ function M.render(opts)
 	local lines = {}
 	local spans = {}
 
-	-- Title line
+	-- Optional title line
 	if opts.title or opts.value then
 		local title = opts.title or ""
 		local value = opts.value or ""
-		local content_w = 4 + 1 + chart_cols -- y_label + sep + chart
-		local gap = content_w - vim.fn.strdisplaywidth(title) - vim.fn.strdisplaywidth(value)
-		if gap < 2 then
-			gap = 2
-		end
+		local content_w = 4 + 1 + chart_cols
+		local gap = math.max(2, content_w - vim.fn.strdisplaywidth(title) - vim.fn.strdisplaywidth(value))
 		local line = pad .. title .. string.rep(" ", gap) .. value
 		table.insert(lines, line)
-
 		if opts.title_hl and title ~= "" then
 			table.insert(spans, { line = 0, start_col = margin, end_col = margin + #title, hl_group = opts.title_hl })
 		end
@@ -195,43 +167,34 @@ function M.render(opts)
 			y_label = "    "
 		end
 
-		-- Each braille char is always 3 bytes in UTF-8 (U+2800–U+28FF)
 		local row_chars = {}
 		for c = 1, chart_cols do
-			table.insert(row_chars, vim.fn.nr2char(BRAILLE_OFFSET + grid[c][char_row]))
+			table.insert(row_chars, vim.fn.nr2char(BRAILLE_BASE + grid[c][char_row]))
 		end
 		local chart_str = table.concat(row_chars)
-
 		local line = pad .. y_label .. sep .. chart_str
 		table.insert(lines, line)
 
 		local line_idx = #lines - 1
 
 		if char_row == 0 or char_row == height - 1 then
-			table.insert(spans, {
-				line = line_idx,
-				start_col = margin,
-				end_col = margin + #y_label,
-				hl_group = "DockyardMuted",
-			})
+			table.insert(
+				spans,
+				{ line = line_idx, start_col = margin, end_col = margin + #y_label, hl_group = "DockyardMuted" }
+			)
 		end
 
 		local sep_start = margin + #y_label
-		table.insert(spans, {
-			line = line_idx,
-			start_col = sep_start,
-			end_col = sep_start + #sep,
-			hl_group = "DockyardMuted",
-		})
+		table.insert(
+			spans,
+			{ line = line_idx, start_col = sep_start, end_col = sep_start + #sep, hl_group = "DockyardMuted" }
+		)
 
-		-- chart_str: all braille = 3 bytes each, so byte length = chart_cols * 3
 		local chart_start = sep_start + #sep
-		table.insert(spans, {
-			line = line_idx,
-			start_col = chart_start,
-			end_col = chart_start + #chart_str,
-			hl_group = hl_group,
-		})
+		table.insert(
+			spans,
+			{ line = line_idx, start_col = chart_start, end_col = chart_start + #chart_str, hl_group = hl }
+		)
 	end
 
 	return lines, spans

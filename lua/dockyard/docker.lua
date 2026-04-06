@@ -427,6 +427,43 @@ end
 --- @field pids string
 
 --- @param container_id string
+--- @param on_stats fun(data: ContainerStats)
+--- @return fun() stop
+M.stream_stats = function(container_id, on_stats)
+	local format = table.concat({
+		"{",
+		'  "cpu_perc": {{json .CPUPerc}},',
+		'  "mem_usage": {{json .MemUsage}},',
+		'  "mem_perc": {{json .MemPerc}},',
+		'  "net_io": {{json .NetIO}},',
+		'  "block_io": {{json .BlockIO}},',
+		'  "pids": {{json .PIDs}}',
+		"}",
+	}, "")
+
+	local job_id = vim.fn.jobstart({ "docker", "stats", "--format", format, container_id }, {
+		on_stdout = function(_, data)
+			for _, line in ipairs(data) do
+				-- Strip ANSI escape sequences (Docker uses ESC[H / ESC[K for terminal refresh)
+				line = line:gsub("\027%[[%d;]*[A-Za-z]", ""):gsub("\r", ""):match("^%s*(.-)%s*$")
+				if line ~= "" then
+					local ok, parsed = pcall(vim.json.decode, line)
+					if ok and parsed then
+						on_stats(parsed)
+					end
+				end
+			end
+		end,
+	})
+
+	return function()
+		if job_id and job_id > 0 then
+			pcall(vim.fn.jobstop, job_id)
+		end
+	end
+end
+
+--- @param container_id string
 --- @param callback fun(result: {ok: boolean, data?: ContainerStats, error?: string})
 M.container_stats = function(container_id, callback)
 	local format = table.concat({
