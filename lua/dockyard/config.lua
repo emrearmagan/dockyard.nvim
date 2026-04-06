@@ -18,10 +18,15 @@
 --- A log source defines where to get logs and how to display them.
 --- A container can have multiple sources (docker output, various log files).
 ---
+--- A log source defines where to get logs and how to display them.
+--- A container can have multiple sources (docker output, various log files).
+--- Omitting `path` streams docker stdout/stderr (equivalent to `docker logs -f`).
+--- For path-less sources, `parser` and `format` default to plain-text if not set.
+---
 --- @class LogSource
 --- @field name? string                       Display name (auto-generated if omitted)
---- @field path? string                       If set, logs are read from this file in container
---- @field parser LogParserType               How to parse logs ("json" or "text")
+--- @field path? string                       File path inside the container; omit to stream docker logs
+--- @field parser? LogParserType              How to parse logs ("json" or "text"); defaults to "text" when path is absent
 --- @field _order? string[]                   Optional per-source column key order override
 --- @field max_lines? number                  Optional per-source max rows override
 --- @field tails? number                      Number of lines to tail on initial load (default: 100)
@@ -38,13 +43,14 @@
 
 --- @class LogLensConfig
 --- @field containers? table<string, ContainerLogConfig> Per-container configurations
+--- @field default_highlights? LogHighlightRule[]        Fallback highlights for all containers (overrides built-in defaults)
 
 -- TODO: Currently not used
 --- @class DisplayConfig
 --- @field views string[] Order of tabs
 
 --- @class DockyardConfig
---- @field display DisplayConfig Display settings
+-- - @field display DisplayConfig Display settings
 --- @field loglens LogLensConfig LogLens settings
 --- @field detect_compose boolean Detect Docker Compose projects and group containers by project
 

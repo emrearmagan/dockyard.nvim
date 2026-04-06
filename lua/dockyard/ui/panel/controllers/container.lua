@@ -664,7 +664,7 @@ function M.render(width, height)
 		}
 		if item.ports and item.ports ~= "" then
 			table.insert(chip_items, {
-				text = string.format("%s %s", icons.view_icon("network"), item.ports),
+				text = string.format("%s %s", icons.view_icon("networks"), item.ports),
 				hl_group = "DockyardPorts",
 			})
 		end

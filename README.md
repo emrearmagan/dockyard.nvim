@@ -17,13 +17,12 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 - [x] Inspect and manage images
 - [x] Inspect and manage networks
 - [x] Open shell sessions inside containers
-- [x] Stream and inspect logs 
+- [x] Stream and inspect logs
 - [ ] Navigate and search the file tree inside a container
 - [ ] Copy, modify, and manage files inside a container
 - [ ] Run Docker build commands from Dockyard
 
 <video src="https://github.com/user-attachments/assets/780cdcf1-5bee-4468-9cd9-7a3ffcdad192" controls width="600"></video>
-
 
 ## Requirements
 
@@ -51,7 +50,6 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 }
 ```
 
-
 <p align="center">
   <img src="https://github.com/user-attachments/assets/45ea8bb8-ba3d-4152-815c-eceb826d35ac" alt="images" width="49%" />
   <img src="https://github.com/user-attachments/assets/6ac75d4f-e54a-47f4-810a-c3bf331b7f8e" alt="networks" width="49%" />
@@ -70,42 +68,28 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 require("dockyard").setup({
   loglens = {
     containers = {
+      -- Override highlights only
+      ["postgres"] = {
+        highlights = {
+          { pattern = "%f[%a]ERROR%f[%A]", group = "ErrorMsg" },
+        },
+      },
+      -- Mix docker logs with file sources
       ["api"] = {
         _order = { "time", "level", "message" },
-        format = function(entry)
-          return {
-            time = entry.timestamp and entry.timestamp:sub(12, 19) or "--:--:--",
-            level = (entry.level or "info"):upper(),
-            message = entry.message or "",
-          }
-        end,
-        highlights = {
-          { pattern = "%d%d:%d%d:%d%d", group = "Comment" },
-          { pattern = "%f[%a]ERROR%f[^%a]", group = "ErrorMsg" },
-        },
         sources = {
+          { name = "Docker Logs" },   -- stdout/stderr, no path needed
           {
-            name = "Backend log1",
+            name = "App Logs",
             path = "/var/log/app.json",
             parser = "json",
             tails = 200,
-          },
-          {
-            name = "Backend log2",
-            path = "/var/log/app2.json",
-            parser = "json",
-            tails = 200,
-          },
-        },
-      },
-      ["postgres"] = {
-        sources = {
-          {
-            name = "Docker Logs",
-            _order = { "logs" },
-            parser = "text",
-            format = function(line)
-              return { logs = line }
+            format = function(entry)
+              return {
+                time = entry.timestamp and entry.timestamp:sub(12, 19) or "--:--:--",
+                level = (entry.level or "info"):upper(),
+                message = entry.message or "",
+              }
             end,
           },
         },
@@ -124,17 +108,20 @@ Open LogLens from the containers tab with `L`. Each container can define one or 
 ### Source options
 
 - `name` string (optional)
-- `path` string (optional; when set, logs are read from that file inside the container)
-- `parser` `"json" | "text"`
+- `path` string (optional) — omit to stream docker stdout/stderr (`docker logs -f`)
+- `parser` `"json" | "text"` (defaults to `"text"` when no path)
+- `format` function (optional when no path; receives `(entry, ctx)`)
 - `tails` number (optional, default `100`)
 
 Container-level defaults (applied to all sources unless overridden):
 
 - `_order` `string[]` (optional column order)
-- `format` function (required at container level or source level; receives `(entry, ctx)`)
-- `highlights` rules (optional)
+- `format` function
+- `highlights` `LogHighlightRule[]` (optional; sensible defaults applied when omitted)
 - `max_lines` number (optional, default `1000`)
 - `tails` number (optional, default `100`)
+
+If no `sources` are configured for a container, docker logs are streamed automatically.
 
 #### Text parser
 
@@ -181,29 +168,27 @@ For JSON parser, `format` receives `(entry, ctx)` where `ctx` includes source me
       context = string.format("user=%s trace=%s", user, trace),
     }
   end,
+  highlights = {
+     { pattern = "%d%d:%d%d:%d%d", group = "Comment" },
+     { pattern = "%f[%a]ERROR%f[^%a]", group = "ErrorMsg" },
+     { pattern = "%f[%a]WARN%f[^%a]", group = "WarningMsg" },
+     { pattern = "%f[%a]INFO%f[^%a]", group = "Identifier" },
+     { pattern = "%d+%.%d+%.%d+%.%d+", group = "Special" },
+     { pattern = "/api/[%w_/%-%.]+", color = "#8be9fd" },
+  }
 }
 ```
 
 ## Highlight Rules
-
-Rules use Lua patterns.
-
-```lua
-highlights = {
-  { pattern = "%d%d:%d%d:%d%d", group = "Comment" },
-  { pattern = "%f[%a]ERROR%f[^%a]", group = "ErrorMsg" },
-  { pattern = "%f[%a]WARN%f[^%a]", group = "WarningMsg" },
-  { pattern = "%f[%a]INFO%f[^%a]", group = "Identifier" },
-  { pattern = "%d+%.%d+%.%d+%.%d+", group = "Special" },
-  { pattern = "/api/[%w_/%-%.]+", color = "#8be9fd" },
-}
-```
 
 Each rule supports:
 
 - `pattern` (required)
 - `group` (highlight group)
 - `color` (hex color)
+
+> [!Notice]
+> Dockyard comes with some default highlights, but you can override or extend them with your own rules.
 
 ## Commands
 
@@ -214,36 +199,38 @@ Each rule supports:
 
 ### Main UI
 
-| Context | Key | Action |
-|---|---|---|
-| Global | `q` | Close Dockyard |
-| Global | `R` | Refresh current tab |
-| Global | `<Tab>` / `<S-Tab>` | Next / previous tab |
-| Global | `j` / `k` | Move cursor |
-| Global | `p` | Open detail panel |
-| Global | `K` | Open details popup |
-| Global | `<CR>` | Expand / Collapse |
-| Global | `?` | Open help popup |
-| Containers | `s` | Toggle start / stop |
-| Containers | `x` | Stop container |
-| Containers | `r` | Restart container |
-| Containers | `d` | Remove container |
-| Containers | `T` | Open shell |
-| Containers | `L` | Open LogLens |
-| Images | `d` | Remove image |
-| Images | `P` | Prune dangling images |
-| Networks | `d` | Remove network |
-| Volumes | `d` | Remove volume |
+| Context    | Key                 | Action                    |
+| ---------- | ------------------- | ------------------------- |
+| Global     | `q`                 | Close Dockyard            |
+| Global     | `R`                 | Refresh current tab       |
+| Global     | `<Tab>` / `<S-Tab>` | Next / previous tab       |
+| Global     | `j` / `k`           | Move cursor               |
+| Global     | `p`                 | Open detail panel         |
+| Global     | `K`                 | Open details popup        |
+| Global     | `<CR>`              | Expand / Collapse         |
+| Global     | `?`                 | Open help popup           |
+| Containers | `s`                 | Toggle start / stop       |
+| Containers | `x`                 | Stop container            |
+| Containers | `r`                 | Restart container         |
+| Containers | `d`                 | Remove container          |
+| Containers | `T`                 | Open shell                |
+| Containers | `L`                 | Open LogLens              |
+| Images     | `d`                 | Remove image              |
+| Images     | `P`                 | Prune dangling images     |
+| Networks   | `d`                 | Remove network            |
+| Volumes    | `d`                 | Remove volume             |
+| Volumes    | `K`                 | Open details popup        |
+| Volumes    | `o`                 | Open mountpoint in Neovim |
 
 ### LogLens
 
-| Key | Action |
-|---|---|
-| `q` | Close LogLens |
-| `f` | Toggle follow |
-| `r` | Toggle raw mode |
-| `/` | Set filter |
-| `c` | Clear filter |
+| Key          | Action           |
+| ------------ | ---------------- |
+| `q`          | Close LogLens    |
+| `f`          | Toggle follow    |
+| `r`          | Toggle raw mode  |
+| `/`          | Set filter       |
+| `c`          | Clear filter     |
 | `<CR>` / `K` | Open entry popup |
 
 ## License

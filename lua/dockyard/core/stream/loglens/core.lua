@@ -22,7 +22,7 @@ local M = {}
 function M.create(opts)
 	opts = opts or {}
 
-	---@type LogStreamInstance
+	---@class LogStreamInstance
 	local instance = {
 		entries = {},
 		active_source = nil,
