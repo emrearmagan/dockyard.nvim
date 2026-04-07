@@ -2,7 +2,7 @@
 
 Interactive Docker dashboard directly in your editor. It lets you view and manage containers, images, networks, and logs
 
-![loglens](https://github.com/user-attachments/assets/2d5121cb-3a79-4cb8-a248-a894bc091e31)
+![loglens](https://github.com/user-attachments/assets/75c21845-f245-428a-b73d-0fdb975b6b9f)
 
 > [!CAUTION]
 > **Still in early development, will have breaking changes!**
@@ -19,11 +19,9 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 - [x] Docker Compose grouping via the `compose` view
 - [x] Open shell sessions inside containers
 - [x] Stream and inspect logs
+- [x] Run Docker build commands from Dockyard
 - [ ] Navigate and search the file tree inside a container
 - [ ] Copy, modify, and manage files inside a container
-- [ ] Run Docker build commands from Dockyard
-
-<video src="https://github.com/user-attachments/assets/780cdcf1-5bee-4468-9cd9-7a3ffcdad192" controls width="600"></video>
 
 ## Requirements
 
@@ -52,12 +50,8 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 ```
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/45ea8bb8-ba3d-4152-815c-eceb826d35ac" alt="images" width="49%" />
-  <img src="https://github.com/user-attachments/assets/6ac75d4f-e54a-47f4-810a-c3bf331b7f8e" alt="networks" width="49%" />
-</p>
-
-<p align="center">
-  <img src="https://github.com/user-attachments/assets/35655c5e-52f6-492e-9359-fdefd853e928" alt="images" width="49%" />
+  <img width="49%" alt="Docker stats" src="https://github.com/user-attachments/assets/1aeb9163-a0e9-4f4a-9243-305f4ba9f5f0" />
+  <img width="49%" alt="Networks" src="https://github.com/user-attachments/assets/b0d76760-a09c-432b-899b-47119069caaa" />
 </p>
 
 ## Configuration
@@ -107,8 +101,6 @@ require("dockyard").setup({
 ```
 
 ## LogLens
-
-![loglens](https://github.com/user-attachments/assets/2d5121cb-3a79-4cb8-a248-a894bc091e31)
 
 Open LogLens from the containers tab with `L`. Each container can define one or more log sources.
 
