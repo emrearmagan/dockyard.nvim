@@ -36,21 +36,29 @@ end
 ---@param on_done fun(res: { ok: boolean, error: string? }|nil, ok: boolean)|nil
 ---@param notify fun(msg: string, level?: "success"|"warn"|"error"|"info"|"loading")
 function M.prune(on_done, notify)
-	notify("Pruning dangling images...", "info")
-	docker.image_prune(function(res)
-		if not res.ok then
-			notify("Image prune failed: " .. tostring(res.error), "error")
+	vim.ui.input({ prompt = "Prune all unused images? [y/N] " }, function(input)
+		if not input or input:lower() ~= "y" then
 			if on_done then
 				on_done(nil, false)
 			end
-
 			return
 		end
 
-		notify("Pruned dangling images", "success")
-		if on_done then
-			on_done(res, true)
-		end
+		notify("Pruning unused images...", "info")
+		docker.image_prune(function(res)
+			if not res.ok then
+				notify("Image prune failed: " .. tostring(res.error), "error")
+				if on_done then
+					on_done(nil, false)
+				end
+				return
+			end
+
+			notify("Pruned unused images", "success")
+			if on_done then
+				on_done(res, true)
+			end
+		end)
 	end)
 end
 

@@ -70,6 +70,8 @@ local function create_commands()
 	pcall(vim.api.nvim_del_user_command, "Dockyard")
 	pcall(vim.api.nvim_del_user_command, "DockyardFloat")
 	pcall(vim.api.nvim_del_user_command, "DockyardFull")
+	pcall(vim.api.nvim_del_user_command, "DockyardBuild")
+	pcall(vim.api.nvim_del_user_command, "DockyardRun")
 
 	vim.api.nvim_create_user_command("Dockyard", function()
 		require("dockyard.ui").open_full()
@@ -78,6 +80,18 @@ local function create_commands()
 	vim.api.nvim_create_user_command("DockyardFloat", function()
 		require("dockyard.ui").open()
 	end, { desc = "Open Dockyard Floating UI" })
+
+	vim.api.nvim_create_user_command("DockyardBuild", function()
+		require("dockyard.commands").build()
+	end, { desc = "Build Docker image from current Dockerfile" })
+
+	vim.api.nvim_create_user_command("DockyardRun", function(cmd_opts)
+		if cmd_opts.range == 2 then
+			require("dockyard.commands").run_visual(cmd_opts.line1, cmd_opts.line2)
+		else
+			require("dockyard.commands").run_all()
+		end
+	end, { desc = "Run Docker Compose services", range = true })
 end
 
 ---@param opts? DockyardConfig

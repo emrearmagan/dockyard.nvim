@@ -200,6 +200,8 @@ Each rule supports:
 
 - `:Dockyard` - open fullscreen UI
 - `:DockyardFloat` - open floating UI
+- `:DockyardBuild` - build a Docker image from the nearest `Dockerfile`. Tags the image after the parent directory name.
+- `:DockyardRun` - runs Docker Compose services (`docker compose up -d --force-recreate`). SUpports visual selection.
 
 ## Keymaps
 
@@ -222,7 +224,7 @@ Each rule supports:
 | Containers | `T`                 | Open shell                |
 | Containers | `L`                 | Open LogLens              |
 | Images     | `d`                 | Remove image              |
-| Images     | `P`                 | Prune dangling images     |
+| Images     | `P`                 | Prune unused images       |
 | Networks   | `d`                 | Remove network            |
 | Volumes    | `d`                 | Remove volume             |
 | Volumes    | `K`                 | Open details popup        |

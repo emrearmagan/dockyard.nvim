@@ -396,7 +396,7 @@ end
 
 --- @param callback fun(result: {ok: boolean, error?: string})
 M.image_prune = function(callback)
-	run_docker_command({ "image", "prune", "-f" }, function(result)
+	run_docker_command({ "image", "prune", "-f", "-a" }, function(result)
 		if result.ok then
 			callback({ ok = true })
 		else
