@@ -184,13 +184,23 @@ function M.resolve_runtime(container)
 		max_lines = resolved_sources[1] and resolved_sources[1].max_lines or nil
 	end
 
+	local container_highlights = cfg.highlights or (resolved_sources[1] and resolved_sources[1].highlights) or nil
+	local user_default_highlights = (dockyard_config.options.loglens or {}).default_highlights
+
+	local base = user_default_highlights ~= nil and user_default_highlights or DEFAULT_HIGHLIGHTS
+	local merged_highlights = {}
+	for _, r in ipairs(base) do
+		table.insert(merged_highlights, r)
+	end
+	for _, r in ipairs(container_highlights or {}) do
+		table.insert(merged_highlights, r)
+	end
+
 	return {
 		sources = resolved_sources,
 		max_lines = positive_integer_or(max_lines, 1000),
 		_order = cfg._order or (resolved_sources[1] and resolved_sources[1]._order or nil),
-		highlights = cfg.highlights or (resolved_sources[1] and resolved_sources[1].highlights) or (
-			dockyard_config.options.loglens or {}
-		).default_highlights or DEFAULT_HIGHLIGHTS,
+		highlights = merged_highlights,
 	},
 		nil
 end

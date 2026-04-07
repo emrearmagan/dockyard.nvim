@@ -101,6 +101,7 @@ require("dockyard").setup({
         },
       },
     },
+    default_highlights = { ... } -- Optional global default highlights. Comes with default rules, but you can override them.
   },
 })
 ```
