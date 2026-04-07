@@ -166,7 +166,7 @@ local function ensure_stats_stream(container_id)
 	stop_stats_stream()
 
 	state.stats_instance = stats_stream.create({
-		max_history = 100,
+		max_history = 300,
 		on_update = function()
 			if state.current_tab == "stats" then
 				local panel = require("dockyard.ui.panel")
