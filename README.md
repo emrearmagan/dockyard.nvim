@@ -186,7 +186,7 @@ Each rule supports:
 - `group` (highlight group)
 - `color` (hex color)
 
-> [!Notice]
+> [!NOTE]
 > Dockyard comes with some default highlights, but you can override or extend them with your own rules.
 
 ## Commands
