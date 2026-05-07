@@ -27,7 +27,6 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 
 - Neovim `>= 0.10`
 - Docker CLI available in `$PATH`
-- [`nvim-lua/plenary.nvim`](https://github.com/nvim-lua/plenary.nvim)
 - [`akinsho/toggleterm.nvim`](https://github.com/akinsho/toggleterm.nvim) (optional, for `T` shell keymap)
 
 ## Installation
@@ -38,7 +37,6 @@ Dockyard provides a single Docker workspace inside Neovim. You can inspect conta
 {
   "emrearmagan/dockyard.nvim",
   dependencies = {
-    "nvim-lua/plenary.nvim",
     "akinsho/toggleterm.nvim", -- optional
   },
   cmd = { "Dockyard", "DockyardFloat" },
