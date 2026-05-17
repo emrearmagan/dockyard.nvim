@@ -1,11 +1,28 @@
+[![Neovim](https://img.shields.io/badge/Neovim-0.10+-blue.svg)](https://neovim.io/)
+[![Version](https://img.shields.io/github/v/tag/emrearmagan/dockyard.nvim.svg)](https://github.com/emrearmagan/dockyard.nvim/tags)
+[![License](https://img.shields.io/github/license/emrearmagan/dockyard.nvim?style=flat-square&color=blue)](LICENSE)
+
 # Dockyard.nvim
 
 Interactive Docker dashboard directly in your editor. It lets you view and manage containers, images, networks, and logs
 
-![loglens](https://github.com/user-attachments/assets/75c21845-f245-428a-b73d-0fdb975b6b9f)
-
 > [!CAUTION]
 > **Still in early development, will have breaking changes!**
+
+<table>
+  <thead>
+    <tr>
+      <th width="50%" align="center">Dockyard</th>
+      <th width="50%" align="center">Detail Panel</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td width="50%"><img alt="LogLens" src="https://github.com/user-attachments/assets/75c21845-f245-428a-b73d-0fdb975b6b9f"></td>
+      <td width="50%"><img alt="LogLens" src="https://github.com/user-attachments/assets/75c21845-f245-428a-b73d-0fdb975b6b9f"></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Introduction
 
