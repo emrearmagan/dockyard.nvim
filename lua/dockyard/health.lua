@@ -62,6 +62,31 @@ function M.check()
 	else
 		vim.health.error(":DockyardFloat command not found; call require('dockyard').setup()")
 	end
+
+	--- Keymaps
+	vim.health.start("Keymaps")
+	local by_context = require("dockyard.core.keymaps").validate()
+	local context_names = vim.tbl_keys(by_context)
+	table.sort(context_names)
+
+	local has_conflicts = false
+	for _, ctx in ipairs(context_names) do
+		local conflicts = by_context[ctx] or {}
+		local keys = vim.tbl_keys(conflicts)
+		table.sort(keys)
+		if #keys == 0 then
+			vim.health.ok(string.format("%s: no conflicting mapped keys", ctx))
+		else
+			has_conflicts = true
+			vim.health.warn(string.format("%s: %d conflicting key(s)", ctx, #keys))
+			for _, key in ipairs(keys) do
+				vim.health.warn(string.format("  %s -> %s", key, table.concat(conflicts[key], ", ")))
+			end
+		end
+	end
+	if not has_conflicts and #context_names == 0 then
+		vim.health.ok("No conflicting mapped keys")
+	end
 end
 
 return M
