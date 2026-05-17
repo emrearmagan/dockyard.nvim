@@ -1,58 +1,102 @@
 local M = {}
 
+local help = require("dockyard.ui.popups.help")
+
+local GROUP = "LogLens"
+local INDEX = 10
+
 ---@param buf number
 ---@param state LogLensState
 ---@param handlers { close: fun(), refresh: fun(), open_detail: fun() }
 function M.attach(buf, state, handlers)
-	local opts = { buffer = buf, silent = true, nowait = true }
+	local items = {
+		{
+			key = "q",
+			desc = "Close LogLens",
+			callback = function()
+				handlers.close()
+			end,
+			index = 1,
+		},
+		{
+			key = "f",
+			desc = "Toggle follow mode",
+			callback = function()
+				state.follow = not state.follow
+				handlers.refresh()
+			end,
+			index = 2,
+		},
+		{
+			key = "r",
+			desc = "Toggle raw output",
+			callback = function()
+				state.raw = not state.raw
+				handlers.refresh()
+			end,
+			index = 3,
+		},
+		{
+			key = "/",
+			desc = "Filter logs",
+			callback = function()
+				vim.ui.input({
+					prompt = "Filter logs: ",
+					default = state.filter or "",
+				}, function(input)
+					if input == nil then
+						return
+					end
 
-	vim.keymap.set("n", "q", function()
-		handlers.close()
-	end, opts)
+					if input == "" then
+						state.filter = nil
+					else
+						state.filter = input
+					end
 
-	vim.keymap.set("n", "f", function()
-		state.follow = not state.follow
-		handlers.refresh()
-	end, opts)
+					handlers.refresh()
+				end)
+			end,
+			index = 4,
+		},
+		{
+			key = "c",
+			desc = "Clear filter",
+			callback = function()
+				if state.filter ~= nil then
+					state.filter = nil
+					handlers.refresh()
+				end
+			end,
+			index = 5,
+		},
+		{
+			key = "<CR>",
+			desc = "Open log entry detail",
+			callback = function()
+				handlers.open_detail()
+			end,
+			index = 6,
+		},
+		{
+			key = "K",
+			desc = "Open log entry detail",
+			callback = function()
+				handlers.open_detail()
+			end,
+			index = 7,
+		},
+		{
+			key = "g?",
+			desc = "Toggle this help popup",
+			callback = function()
+				help.toggle({ buffer = buf })
+			end,
+			index = 99,
+		},
+	}
 
-	vim.keymap.set("n", "r", function()
-		state.raw = not state.raw
-		handlers.refresh()
-	end, opts)
-
-	vim.keymap.set("n", "/", function()
-		vim.ui.input({
-			prompt = "Filter logs: ",
-			default = state.filter or "",
-		}, function(input)
-			if input == nil then
-				return
-			end
-
-			if input == "" then
-				state.filter = nil
-			else
-				state.filter = input
-			end
-
-			handlers.refresh()
-		end)
-	end, opts)
-
-	vim.keymap.set("n", "c", function()
-		if state.filter ~= nil then
-			state.filter = nil
-			handlers.refresh()
-		end
-	end, opts)
-
-	vim.keymap.set("n", "<CR>", function()
-		handlers.open_detail()
-	end, opts)
-
-	vim.keymap.set("n", "K", function()
-		handlers.open_detail()
-	end, opts)
+	help.register(GROUP, items, { buffer = buf, index = INDEX })
 
 	local group = vim.api.nvim_create_augroup("DockyardLogLensFollow" .. tostring(buf), { clear = true })
 	vim.api.nvim_create_autocmd("CursorMoved", {

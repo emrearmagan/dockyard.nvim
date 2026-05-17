@@ -2,6 +2,10 @@ local M = {}
 
 local controller = require("dockyard.ui.views.containers.controller")
 local actions = require("dockyard.ui.actions.containers")
+local help = require("dockyard.ui.popups.help")
+
+local GROUP = "Containers"
+local INDEX = 20
 
 local function get_node_at_cursor()
 	local ui_state = require("dockyard.ui.state")
@@ -29,89 +33,132 @@ end
 ---@param notify fun(msg:string,level?:"success"|"warn"|"error"|"info"|"loading")
 ---@param hooks { on_done?: fun(res: { ok: boolean, error?: string }|nil, ok: boolean) }|nil
 function M.setup(buf, notify, hooks)
-	local opts = { buffer = buf, silent = true, nowait = true }
 	local on_done = function(res, ok)
 		if hooks and hooks.on_done then
 			hooks.on_done(res, ok)
 		end
 	end
 
-	vim.keymap.set("n", "<CR>", function()
-		local node = get_item_at_cursor()
-		if node and node.kind == "compose_project" then
-			controller.toggle(node.item)
-			on_done(nil, true)
-		end
-	end, opts)
+	local items = {
+		{
+			key = "<CR>",
+			desc = "Expand / Collapse compose project",
+			callback = function()
+				local node = get_item_at_cursor()
+				if node and node.kind == "compose_project" then
+					controller.toggle(node.item)
+					on_done(nil, true)
+				end
+			end,
+			index = 1,
+		},
+		{
+			key = "s",
+			desc = "Toggle Start / Stop",
+			callback = function()
+				local item = get_item_at_cursor()
+				if item then
+					actions.toggle_start_stop(item.item, on_done, notify)
+				end
+			end,
+			index = 2,
+		},
+		{
+			key = "x",
+			desc = "Stop container",
+			callback = function()
+				local item = get_item_at_cursor()
+				if item then
+					actions.stop(item.item, on_done, notify)
+				end
+			end,
+			index = 3,
+		},
+		{
+			key = "r",
+			desc = "Restart container",
+			callback = function()
+				local item = get_item_at_cursor()
+				if item then
+					actions.restart(item.item, on_done, notify)
+				end
+			end,
+			index = 4,
+		},
+		{
+			key = "d",
+			desc = "Remove container",
+			callback = function()
+				local item = get_item_at_cursor()
+				if item then
+					actions.remove(item.item, on_done, notify)
+				end
+			end,
+			index = 5,
+		},
+		{
+			key = "T",
+			desc = "Open terminal",
+			callback = function()
+				local item = get_item_at_cursor()
+				if item then
+					controller.open_terminal(item.item)
+				end
+			end,
+			index = 6,
+		},
+		{
+			key = "L",
+			desc = "Open logs",
+			callback = function()
+				local item = get_item_at_cursor()
+				if item then
+					controller.open_logs(item.item)
+				end
+			end,
+			index = 7,
+		},
+		{
+			key = "K",
+			desc = "Open inspect popup",
+			callback = function()
+				local item = get_item_at_cursor()
+				if item and item.kind == "container" then
+					controller.open_details(item.item)
+				end
+			end,
+			index = 8,
+		},
+		{
+			key = "p",
+			desc = "Open detail panel",
+			callback = function()
+				local node = get_item_at_cursor()
+				if node then
+					require("dockyard.ui.panel").open(node)
+				end
+			end,
+			index = 9,
+		},
+	}
 
-	vim.keymap.set("n", "s", function()
-		local item = get_item_at_cursor()
-		if item then
-			actions.toggle_start_stop(item.item, on_done, notify)
-		end
-	end, opts)
-
-	vim.keymap.set("n", "x", function()
-		local item = get_item_at_cursor()
-		if item then
-			actions.stop(item.item, on_done, notify)
-		end
-	end, opts)
-
-	vim.keymap.set("n", "r", function()
-		local item = get_item_at_cursor()
-		if item then
-			actions.restart(item.item, on_done, notify)
-		end
-	end, opts)
-
-	vim.keymap.set("n", "d", function()
-		local item = get_item_at_cursor()
-		if item then
-			actions.remove(item.item, on_done, notify)
-		end
-	end, opts)
-
-	vim.keymap.set("n", "T", function()
-		local item = get_item_at_cursor()
-		if item then
-			controller.open_terminal(item.item)
-		end
-	end, opts)
-
-	vim.keymap.set("n", "L", function()
-		local item = get_item_at_cursor()
-		if item then
-			controller.open_logs(item.item)
-		end
-	end, opts)
-
-	vim.keymap.set("n", "K", function()
-		local item = get_item_at_cursor()
-		if item and item.kind == "container" then
-			controller.open_details(item.item)
-		end
-	end, opts)
-
-	vim.keymap.set("n", "p", function()
-		local node = get_item_at_cursor()
-		if node then
-			require("dockyard.ui.panel").open(node)
-		end
-	end, opts)
+	help.register(GROUP, items, { buffer = buf, index = INDEX })
 end
 
 ---@param buf number
 function M.teardown(buf)
-	pcall(vim.keymap.del, "n", "<CR>", { buffer = buf })
-	pcall(vim.keymap.del, "n", "s", { buffer = buf })
-	pcall(vim.keymap.del, "n", "x", { buffer = buf })
-	pcall(vim.keymap.del, "n", "r", { buffer = buf })
-	pcall(vim.keymap.del, "n", "d", { buffer = buf })
-	pcall(vim.keymap.del, "n", "T", { buffer = buf })
-	pcall(vim.keymap.del, "n", "L", { buffer = buf })
-	pcall(vim.keymap.del, "n", "K", { buffer = buf })
-	pcall(vim.keymap.del, "n", "p", { buffer = buf })
+	local items = {
+		{ key = "<CR>" },
+		{ key = "s" },
+		{ key = "x" },
+		{ key = "r" },
+		{ key = "d" },
+		{ key = "T" },
+		{ key = "L" },
+		{ key = "K" },
+		{ key = "p" },
+	}
+	help.remove(GROUP, items, { buffer = buf })
 	controller.on_teardown()
 end
 

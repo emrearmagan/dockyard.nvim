@@ -142,7 +142,7 @@ local function open_with(mode, win_config_fn)
 		next_view = M.next_view,
 		prev_view = M.prev_view,
 		open_help = function()
-			require("dockyard.ui.popups.help").open()
+			require("dockyard.ui.popups.help").toggle({ buffer = state.buf_id })
 		end,
 	})
 
