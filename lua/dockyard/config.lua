@@ -53,6 +53,7 @@
 --- @class DockyardConfig
 --- @field display? DisplayConfig Display settings
 --- @field loglens? LogLensConfig LogLens settings
+--- @field keymaps? DockyardKeymapsConfig Keybindings (see core/keymaps.lua for type)
 
 local M = {}
 
@@ -63,6 +64,45 @@ M.options = {
 	},
 	loglens = {
 		containers = {},
+	},
+	keymaps = {
+		ui = {
+			help = "g?",
+			close = "q",
+			refresh = "R",
+			next_view = { "<Tab>", "]" },
+			prev_view = { "<S-Tab>", "[" },
+			toggle_node = "<CR>",
+			open_details = "K",
+			open_panel = "p",
+		},
+		containers = {
+			toggle_start_stop = "s",
+			stop = "x",
+			restart = "r",
+			remove = "d",
+			open_terminal = "T",
+			open_logs = "L",
+		},
+		images = {
+			remove = "d",
+			prune = "P",
+		},
+		networks = {
+			remove = "d",
+		},
+		volumes = {
+			remove = "d",
+		},
+		loglens = {
+			close = "q",
+			toggle_follow = "f",
+			toggle_raw = "r",
+			filter = "/",
+			clear_filter = "c",
+			open_detail = { "<CR>", "K" },
+			help = "g?",
+		},
 	},
 }
 
