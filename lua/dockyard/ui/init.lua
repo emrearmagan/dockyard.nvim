@@ -146,6 +146,13 @@ local function open_with(mode, win_config_fn)
 		end,
 	})
 
+	require("dockyard.ui.popups.help").register_command("Commands", {
+		{ name = "Dockyard", desc = "Open Dockyard UI" },
+		{ name = "DockyardFloat", desc = "Open Dockyard floating UI" },
+		{ name = "DockyardBuild", desc = "Build Docker image from current Dockerfile" },
+		{ name = "DockyardRun", desc = "Run Docker Compose services" },
+	}, { buffer = state.buf_id, index = 999 })
+
 	return state.win_id
 end
 
