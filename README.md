@@ -198,41 +198,53 @@ Each rule supports:
 
 ## Keymaps
 
-### Main UI
+Press `g?` inside any Dockyard buffer to see all bindings for the current view.
 
-| Context    | Key                 | Action                    |
-| ---------- | ------------------- | ------------------------- |
-| Global     | `q`                 | Close Dockyard            |
-| Global     | `R`                 | Refresh current tab       |
-| Global     | `<Tab>` / `<S-Tab>` | Next / previous tab       |
-| Global     | `j` / `k`           | Move cursor               |
-| Global     | `p`                 | Open detail panel         |
-| Global     | `K`                 | Open details popup        |
-| Global     | `<CR>`              | Expand / Collapse         |
-| Global     | `?`                 | Open help popup           |
-| Containers | `s`                 | Toggle start / stop       |
-| Containers | `x`                 | Stop container            |
-| Containers | `r`                 | Restart container         |
-| Containers | `d`                 | Remove container          |
-| Containers | `T`                 | Open shell                |
-| Containers | `L`                 | Open LogLens              |
-| Images     | `d`                 | Remove image              |
-| Images     | `P`                 | Prune unused images       |
-| Networks   | `d`                 | Remove network            |
-| Volumes    | `d`                 | Remove volume             |
-| Volumes    | `K`                 | Open details popup        |
-| Volumes    | `o`                 | Open mountpoint in Neovim |
+Set an action to `false` to disable it, or set it to a list to add aliases.
 
-### LogLens
-
-| Key          | Action           |
-| ------------ | ---------------- |
-| `q`          | Close LogLens    |
-| `f`          | Toggle follow    |
-| `r`          | Toggle raw mode  |
-| `/`          | Set filter       |
-| `c`          | Clear filter     |
-| `<CR>` / `K` | Open entry popup |
+```lua
+require("dockyard").setup({
+  keymaps = {
+    ui = {
+      help = "g?",
+      close = "q", -- false would disable it
+      refresh = "R",
+      next_view = { "<Tab>", "]" }, -- list adds aliases
+      prev_view = { "<S-Tab>", "[" },
+      toggle_node = "<CR>",
+      open_details = "K",
+      open_panel = "p",
+    },
+    containers = {
+      toggle_start_stop = "s",
+      stop = "x",
+      restart = "r",
+      remove = "d",
+      open_terminal = "T",
+      open_logs = "L",
+    },
+    images = {
+      remove = "d",
+      prune = "P",
+    },
+    networks = {
+      remove = "d",
+    },
+    volumes = {
+      remove = "d",
+    },
+    loglens = {
+      close = "q",
+      toggle_follow = "f",
+      toggle_raw = "r",
+      filter = "/",
+      clear_filter = "c",
+      open_detail = { "<CR>", "K" },
+      help = "g?",
+    },
+  },
+})
+```
 
 ## License
 
