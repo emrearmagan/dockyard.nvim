@@ -2,6 +2,10 @@ local M = {}
 
 local panel_state = require("dockyard.ui.panel.state")
 local generic_popup = require("dockyard.ui.popups.popup")
+local help = require("dockyard.ui.popups.help")
+
+local PANEL_GROUP = "Panel"
+local PANEL_INDEX = 100
 
 local ns = vim.api.nvim_create_namespace("dockyard.panel")
 
@@ -51,6 +55,15 @@ local function ensure_popup()
 				ctrl.on_close()
 			end
 			panel_state.reset()
+			if mapped_buf then
+				help.remove(PANEL_GROUP, {
+					{ key = "<Tab>" },
+					{ key = "<S-Tab>" },
+					{ key = "]" },
+					{ key = "[" },
+					{ key = "g?" },
+				}, { buffer = mapped_buf })
+			end
 			mapped_buf = nil
 		end,
 	})
@@ -63,23 +76,32 @@ local function register_panel_keys(buf)
 		return
 	end
 
-	local opts = { buffer = buf, silent = true, nowait = true }
-
-	vim.keymap.set("n", "<Tab>", function()
-		M.next_tab()
-	end, opts)
-
-	vim.keymap.set("n", "<S-Tab>", function()
-		M.prev_tab()
-	end, opts)
-
-	vim.keymap.set("n", "]", function()
-		M.next_tab()
-	end, opts)
-
-	vim.keymap.set("n", "[", function()
-		M.prev_tab()
-	end, opts)
+	help.register(PANEL_GROUP, {
+		{
+			key = { "<Tab>", "]" },
+			desc = "Next tab",
+			callback = function()
+				M.next_tab()
+			end,
+			index = 1,
+		},
+		{
+			key = { "<S-Tab>", "[" },
+			desc = "Previous tab",
+			callback = function()
+				M.prev_tab()
+			end,
+			index = 2,
+		},
+		{
+			key = "g?",
+			desc = "Toggle this help popup",
+			callback = function()
+				help.toggle({ buffer = buf })
+			end,
+			index = 99,
+		},
+	}, { buffer = buf, index = PANEL_INDEX })
 
 	mapped_buf = buf
 end
