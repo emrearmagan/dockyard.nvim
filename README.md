@@ -18,8 +18,8 @@ Interactive Docker dashboard directly in your editor. It lets you view and manag
   </thead>
   <tbody>
     <tr>
-      <td width="50%"><img alt="LogLens" src="https://github.com/user-attachments/assets/75c21845-f245-428a-b73d-0fdb975b6b9f"></td>
-      <td width="50%"><img alt="LogLens" src="https://github.com/user-attachments/assets/75c21845-f245-428a-b73d-0fdb975b6b9f"></td>
+      <td width="50%"><img alt="LogLens" src="https://github.com/user-attachments/assets/06291218-02b6-4733-96a6-27d8ac7dd7b7"></td>
+      <td width="50%"><img alt="LogLens" src="https://github.com/user-attachments/assets/1ed7f58d-b407-4b0b-ba8e-ad719e226702"></td>
     </tr>
   </tbody>
 </table>
