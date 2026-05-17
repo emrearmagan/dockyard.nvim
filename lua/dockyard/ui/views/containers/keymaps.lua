@@ -3,6 +3,7 @@ local M = {}
 local controller = require("dockyard.ui.views.containers.controller")
 local actions = require("dockyard.ui.actions.containers")
 local help = require("dockyard.ui.popups.help")
+local resolver = require("dockyard.core.keymaps")
 
 local GROUP = "Containers"
 local INDEX = 20
@@ -39,9 +40,11 @@ function M.setup(buf, notify, hooks)
 		end
 	end
 
-	local items = {
-		{
-			key = "<CR>",
+	local items = {}
+
+	resolver.push(
+		items,
+		resolver.item("ui.toggle_node", {
 			desc = "Expand / Collapse compose project",
 			callback = function()
 				local node = get_item_at_cursor()
@@ -51,9 +54,11 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 1,
-		},
-		{
-			key = "s",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("containers.toggle_start_stop", {
 			desc = "Toggle Start / Stop",
 			callback = function()
 				local item = get_item_at_cursor()
@@ -62,9 +67,11 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 2,
-		},
-		{
-			key = "x",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("containers.stop", {
 			desc = "Stop container",
 			callback = function()
 				local item = get_item_at_cursor()
@@ -73,9 +80,11 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 3,
-		},
-		{
-			key = "r",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("containers.restart", {
 			desc = "Restart container",
 			callback = function()
 				local item = get_item_at_cursor()
@@ -84,9 +93,11 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 4,
-		},
-		{
-			key = "d",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("containers.remove", {
 			desc = "Remove container",
 			callback = function()
 				local item = get_item_at_cursor()
@@ -95,9 +106,11 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 5,
-		},
-		{
-			key = "T",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("containers.open_terminal", {
 			desc = "Open terminal",
 			callback = function()
 				local item = get_item_at_cursor()
@@ -106,9 +119,11 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 6,
-		},
-		{
-			key = "L",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("containers.open_logs", {
 			desc = "Open logs",
 			callback = function()
 				local item = get_item_at_cursor()
@@ -117,9 +132,11 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 7,
-		},
-		{
-			key = "K",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("ui.open_details", {
 			desc = "Open inspect popup",
 			callback = function()
 				local item = get_item_at_cursor()
@@ -128,9 +145,11 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 8,
-		},
-		{
-			key = "p",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("ui.open_panel", {
 			desc = "Open detail panel",
 			callback = function()
 				local node = get_item_at_cursor()
@@ -139,25 +158,24 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 9,
-		},
-	}
+		})
+	)
 
 	help.register(GROUP, items, { buffer = buf, index = INDEX })
 end
 
 ---@param buf number
 function M.teardown(buf)
-	local items = {
-		{ key = "<CR>" },
-		{ key = "s" },
-		{ key = "x" },
-		{ key = "r" },
-		{ key = "d" },
-		{ key = "T" },
-		{ key = "L" },
-		{ key = "K" },
-		{ key = "p" },
-	}
+	local items = {}
+	resolver.push(items, resolver.removal("ui.toggle_node"))
+	resolver.push(items, resolver.removal("containers.toggle_start_stop"))
+	resolver.push(items, resolver.removal("containers.stop"))
+	resolver.push(items, resolver.removal("containers.restart"))
+	resolver.push(items, resolver.removal("containers.remove"))
+	resolver.push(items, resolver.removal("containers.open_terminal"))
+	resolver.push(items, resolver.removal("containers.open_logs"))
+	resolver.push(items, resolver.removal("ui.open_details"))
+	resolver.push(items, resolver.removal("ui.open_panel"))
 	help.remove(GROUP, items, { buffer = buf })
 	controller.on_teardown()
 end

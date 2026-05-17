@@ -4,6 +4,7 @@ local controller = require("dockyard.ui.views.images.controller")
 local actions = require("dockyard.ui.actions.images")
 local ui_state = require("dockyard.ui.state")
 local help = require("dockyard.ui.popups.help")
+local resolver = require("dockyard.core.keymaps")
 
 local GROUP = "Images"
 local INDEX = 30
@@ -31,9 +32,11 @@ end
 ---@param notify fun(msg:string,level?:"success"|"warn"|"error"|"info"|"loading")
 ---@param hooks { on_toggle?: fun(), on_remove_done?: fun(res: { ok: boolean, error?: string }|nil, ok: boolean), on_prune_done?: fun(res: { ok: boolean, error?: string }|nil, ok: boolean) }|nil
 function M.setup(buf, notify, hooks)
-	local items = {
-		{
-			key = "<CR>",
+	local items = {}
+
+	resolver.push(
+		items,
+		resolver.item("ui.toggle_node", {
 			desc = "Expand / Collapse image",
 			callback = function()
 				local node = get_typed_node_at_cursor()
@@ -45,9 +48,11 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 1,
-		},
-		{
-			key = "d",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("images.remove", {
 			desc = "Remove selected image",
 			callback = function()
 				local node = get_typed_node_at_cursor()
@@ -60,9 +65,11 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 2,
-		},
-		{
-			key = "P",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("images.prune", {
 			desc = "Prune dangling images",
 			callback = function()
 				actions.prune(function(res, ok)
@@ -72,9 +79,11 @@ function M.setup(buf, notify, hooks)
 				end, notify)
 			end,
 			index = 3,
-		},
-		{
-			key = "K",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("ui.open_details", {
 			desc = "Open inspect popup",
 			callback = function()
 				local node = get_typed_node_at_cursor()
@@ -83,9 +92,11 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 4,
-		},
-		{
-			key = "p",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("ui.open_panel", {
 			desc = "Open detail panel",
 			callback = function()
 				local node = get_typed_node_at_cursor()
@@ -94,21 +105,20 @@ function M.setup(buf, notify, hooks)
 				end
 			end,
 			index = 5,
-		},
-	}
+		})
+	)
 
 	help.register(GROUP, items, { buffer = buf, index = INDEX })
 end
 
 ---@param buf number
 function M.teardown(buf)
-	local items = {
-		{ key = "<CR>" },
-		{ key = "d" },
-		{ key = "P" },
-		{ key = "K" },
-		{ key = "p" },
-	}
+	local items = {}
+	resolver.push(items, resolver.removal("ui.toggle_node"))
+	resolver.push(items, resolver.removal("images.remove"))
+	resolver.push(items, resolver.removal("images.prune"))
+	resolver.push(items, resolver.removal("ui.open_details"))
+	resolver.push(items, resolver.removal("ui.open_panel"))
 	help.remove(GROUP, items, { buffer = buf })
 end
 

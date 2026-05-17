@@ -1,6 +1,7 @@
 local M = {}
 
 local help = require("dockyard.ui.popups.help")
+local resolver = require("dockyard.core.keymaps")
 
 local GROUP = "LogLens"
 local INDEX = 10
@@ -9,35 +10,43 @@ local INDEX = 10
 ---@param state LogLensState
 ---@param handlers { close: fun(), refresh: fun(), open_detail: fun() }
 function M.attach(buf, state, handlers)
-	local items = {
-		{
-			key = "q",
+	local items = {}
+
+	resolver.push(
+		items,
+		resolver.item("loglens.close", {
 			desc = "Close LogLens",
 			callback = function()
 				handlers.close()
 			end,
 			index = 1,
-		},
-		{
-			key = "f",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("loglens.toggle_follow", {
 			desc = "Toggle follow mode",
 			callback = function()
 				state.follow = not state.follow
 				handlers.refresh()
 			end,
 			index = 2,
-		},
-		{
-			key = "r",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("loglens.toggle_raw", {
 			desc = "Toggle raw output",
 			callback = function()
 				state.raw = not state.raw
 				handlers.refresh()
 			end,
 			index = 3,
-		},
-		{
-			key = "/",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("loglens.filter", {
 			desc = "Filter logs",
 			callback = function()
 				vim.ui.input({
@@ -58,9 +67,11 @@ function M.attach(buf, state, handlers)
 				end)
 			end,
 			index = 4,
-		},
-		{
-			key = "c",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("loglens.clear_filter", {
 			desc = "Clear filter",
 			callback = function()
 				if state.filter ~= nil then
@@ -69,32 +80,28 @@ function M.attach(buf, state, handlers)
 				end
 			end,
 			index = 5,
-		},
-		{
-			key = "<CR>",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("loglens.open_detail", {
 			desc = "Open log entry detail",
 			callback = function()
 				handlers.open_detail()
 			end,
 			index = 6,
-		},
-		{
-			key = "K",
-			desc = "Open log entry detail",
-			callback = function()
-				handlers.open_detail()
-			end,
-			index = 7,
-		},
-		{
-			key = "g?",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("loglens.help", {
 			desc = "Toggle this help popup",
 			callback = function()
 				help.toggle({ buffer = buf })
 			end,
 			index = 99,
-		},
-	}
+		})
+	)
 
 	help.register(GROUP, items, { buffer = buf, index = INDEX })
 

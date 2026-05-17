@@ -3,6 +3,7 @@ local M = {}
 local panel_state = require("dockyard.ui.panel.state")
 local generic_popup = require("dockyard.ui.popups.popup")
 local help = require("dockyard.ui.popups.help")
+local resolver = require("dockyard.core.keymaps")
 
 local PANEL_GROUP = "Panel"
 local PANEL_INDEX = 100
@@ -56,13 +57,11 @@ local function ensure_popup()
 			end
 			panel_state.reset()
 			if mapped_buf then
-				help.remove(PANEL_GROUP, {
-					{ key = "<Tab>" },
-					{ key = "<S-Tab>" },
-					{ key = "]" },
-					{ key = "[" },
-					{ key = "g?" },
-				}, { buffer = mapped_buf })
+				local removal_items = {}
+				resolver.push(removal_items, resolver.removal("ui.next_view"))
+				resolver.push(removal_items, resolver.removal("ui.prev_view"))
+				resolver.push(removal_items, resolver.removal("ui.help"))
+				help.remove(PANEL_GROUP, removal_items, { buffer = mapped_buf })
 			end
 			mapped_buf = nil
 		end,
@@ -76,32 +75,38 @@ local function register_panel_keys(buf)
 		return
 	end
 
-	help.register(PANEL_GROUP, {
-		{
-			key = { "<Tab>", "]" },
+	local items = {}
+	resolver.push(
+		items,
+		resolver.item("ui.next_view", {
 			desc = "Next tab",
 			callback = function()
 				M.next_tab()
 			end,
 			index = 1,
-		},
-		{
-			key = { "<S-Tab>", "[" },
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("ui.prev_view", {
 			desc = "Previous tab",
 			callback = function()
 				M.prev_tab()
 			end,
 			index = 2,
-		},
-		{
-			key = "g?",
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("ui.help", {
 			desc = "Toggle this help popup",
 			callback = function()
 				help.toggle({ buffer = buf })
 			end,
 			index = 99,
-		},
-	}, { buffer = buf, index = PANEL_INDEX })
+		})
+	)
+	help.register(PANEL_GROUP, items, { buffer = buf, index = PANEL_INDEX })
 
 	mapped_buf = buf
 end
