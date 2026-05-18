@@ -36,6 +36,8 @@ local M = {}
 ---@field toggle_raw? DockyardKeymapValue
 ---@field filter? DockyardKeymapValue
 ---@field clear_filter? DockyardKeymapValue
+---@field next_source? DockyardKeymapValue
+---@field prev_source? DockyardKeymapValue
 ---@field open_detail? DockyardKeymapValue
 ---@field help? DockyardKeymapValue
 
@@ -209,6 +211,8 @@ local LOGLENS_IDS = {
 	"loglens.toggle_raw",
 	"loglens.filter",
 	"loglens.clear_filter",
+	"loglens.next_source",
+	"loglens.prev_source",
 	"loglens.open_detail",
 	"loglens.help",
 }

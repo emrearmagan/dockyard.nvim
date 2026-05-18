@@ -26,6 +26,7 @@ function M.create(opts)
 	local instance = {
 		entries = {},
 		active_source = nil,
+		sources = {},
 		max_lines = 1000,
 		container = nil,
 		container_name = nil,
@@ -93,6 +94,7 @@ function M.create(opts)
 			_order = runtime._order,
 			highlights = runtime.highlights,
 		}
+		self.sources = runtime.sources or {}
 		self.max_lines = opts.max_lines or runtime.max_lines
 		self._parser_sessions = parser_sessions
 		self._stream_handles = {}
@@ -100,14 +102,24 @@ function M.create(opts)
 		for i, source in ipairs(runtime.sources or {}) do
 			local session = self._parser_sessions[i]
 			if session then
+				local source_idx = i
+				local source_name = source.name or source.path or (source.path == nil and "docker" or "source " .. i)
 				local handle = stream.start(container, source, source.tails, function(chunk)
 					local rows = session:push(chunk)
 					if #rows > 0 then
+						for _, row in ipairs(rows) do
+							row._source_idx = source_idx
+							row._source_name = source_name
+						end
 						append_rows(rows)
 					end
 				end, function()
 					local tail_rows = session:flush()
 					if #tail_rows > 0 then
+						for _, row in ipairs(tail_rows) do
+							row._source_idx = source_idx
+							row._source_name = source_name
+						end
 						append_rows(tail_rows)
 					end
 				end)

@@ -100,6 +100,8 @@ M.options = {
 			toggle_raw = "r",
 			filter = "/",
 			clear_filter = "c",
+			next_source = "<Tab>",
+			prev_source = "<S-Tab>",
 			open_detail = { "<CR>", "K" },
 			help = "g?",
 		},

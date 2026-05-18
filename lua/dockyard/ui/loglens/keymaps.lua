@@ -103,6 +103,60 @@ function M.attach(buf, state, handlers)
 		})
 	)
 
+	local function cycle_tab(delta)
+		local n = #(state.sources or {})
+		if n <= 1 then
+			return
+		end
+		local cur = state.active_source_idx or 0
+		local nxt = cur + delta
+		if nxt < 0 then
+			nxt = n
+		elseif nxt > n then
+			nxt = 0
+		end
+		state.active_source_idx = nxt
+		handlers.refresh()
+	end
+
+	resolver.push(
+		items,
+		resolver.item("loglens.next_source", {
+			desc = "Next source",
+			callback = function()
+				cycle_tab(1)
+			end,
+			index = 7,
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("loglens.prev_source", {
+			desc = "Previous source",
+			callback = function()
+				cycle_tab(-1)
+			end,
+			index = 8,
+		})
+	)
+
+	for i = 1, 9 do
+		table.insert(items, {
+			key = tostring(i),
+			desc = ("Select source %d"):format(i),
+			hidden = true,
+			callback = function()
+				local n = #(state.sources or {})
+				local target = i - 1
+				if target > n then
+					return
+				end
+				state.active_source_idx = target
+				handlers.refresh()
+			end,
+		})
+	end
+
 	help.register(GROUP, items, { buffer = buf, index = INDEX })
 
 	local group = vim.api.nvim_create_augroup("DockyardLogLensFollow" .. tostring(buf), { clear = true })

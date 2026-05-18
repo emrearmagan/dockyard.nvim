@@ -59,8 +59,10 @@ end
 ---@param entries LogLensEntry[]
 ---@param raw boolean
 ---@param filter string|nil
+---@param active_source_idx number|nil  0 = All, else source index
+---@param show_source_col boolean  prepend "source" column (only on All with >1 source)
 ---@return table[]
-local function to_rows(entries, raw, filter)
+local function to_rows(entries, raw, filter, active_source_idx, show_source_col)
 	local rows = {}
 	local row_to_entry = setmetatable({}, { __mode = "k" })
 	local needle = nil
@@ -91,17 +93,28 @@ local function to_rows(entries, raw, filter)
 
 	for _, entry in ipairs(entries or {}) do
 		if type(entry) == "table" then
+			if active_source_idx and active_source_idx > 0 and entry._source_idx ~= active_source_idx then
+				goto continue
+			end
 			local row = nil
 			if raw then
 				row = { raw = tostring(entry.raw or "") }
 			elseif type(entry.data) == "table" then
-				row = entry.data
+				if show_source_col then
+					row = { source = entry._source_name or "" }
+					for k, v in pairs(entry.data) do
+						row[k] = v
+					end
+				else
+					row = entry.data
+				end
 			end
 			if row and row_matches(row) then
 				table.insert(rows, row)
 				row_to_entry[row] = entry
 			end
 		end
+		::continue::
 	end
 	return rows, row_to_entry
 end
@@ -112,16 +125,45 @@ function M.render(state)
 		return
 	end
 
+	local sources = state.sources or {}
+	local active_source_idx = state.active_source_idx or 0
+	if active_source_idx > #sources then
+		active_source_idx = 0
+		state.active_source_idx = 0
+	end
+	local show_source_col = active_source_idx == 0 and #sources > 1 and not state.raw
+
 	local winbar = header.render(state.container_name or "unknown", {
 		follow = state.follow,
 		raw = state.raw,
 		filter = state.filter,
+		sources = sources,
+		active_source_idx = active_source_idx,
 	})
 	vim.api.nvim_set_option_value("winbar", winbar, { win = state.win_id })
 
 	local source = state.active_source or {}
-	local rows, row_to_entry = to_rows(state.entries, state.raw, state.filter)
-	local columns = infer_columns(rows, state.raw and { "raw" } or source._order)
+	if active_source_idx > 0 and sources[active_source_idx] then
+		source = sources[active_source_idx]
+	end
+	local rows, row_to_entry = to_rows(state.entries, state.raw, state.filter, active_source_idx, show_source_col)
+	local order = source._order
+	if show_source_col and order then
+		local prefixed = { "source" }
+		for _, k in ipairs(order) do
+			table.insert(prefixed, k)
+		end
+		order = prefixed
+	elseif show_source_col and rows[1] then
+		local prefixed = { "source" }
+		for k, _ in pairs(rows[1]) do
+			if k ~= "source" then
+				table.insert(prefixed, k)
+			end
+		end
+		order = prefixed
+	end
+	local columns = infer_columns(rows, state.raw and { "raw" } or order)
 	if #columns == 0 then
 		vim.api.nvim_set_option_value("modifiable", true, { buf = state.buf_id })
 		vim.api.nvim_buf_set_lines(state.buf_id, 0, -1, false, {})
@@ -135,7 +177,7 @@ function M.render(state)
 		columns = columns,
 		rows = rows,
 		width = width,
-		margin = 0,
+		margin = 1,
 		fill = false,
 	})
 

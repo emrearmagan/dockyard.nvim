@@ -2,6 +2,8 @@
 ---@field raw string
 ---@field formatted string
 ---@field data table<string, any>
+---@field _source_idx? number
+---@field _source_name? string
 
 ---@class LogLensParserSession
 ---@field push fun(self: LogLensParserSession, chunk: string): LogLensEntry[]
@@ -19,6 +21,8 @@
 ---@field line_map table|nil
 ---@field job_ids number[]
 ---@field active_source LogSource|nil
+---@field sources LogSource[]
+---@field active_source_idx number
 ---@field max_lines number
 ---@field parser_sessions LogLensParserSession[]
 
@@ -43,6 +47,8 @@ local M = {
 
 	job_ids = {},
 	active_source = nil,
+	sources = {},
+	active_source_idx = 0,
 	max_lines = 2000,
 	parser_sessions = {},
 }
@@ -64,6 +70,8 @@ function M.reset()
 
 	M.job_ids = {}
 	M.active_source = nil
+	M.sources = {}
+	M.active_source_idx = 0
 	M.max_lines = 2000
 	M.parser_sessions = {}
 end
