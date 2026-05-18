@@ -81,6 +81,14 @@ local function trim(s)
 	return s:match("^%s*(.-)%s*$")
 end
 
+local function split_lines(chunk)
+	local lines = {}
+	for line in tostring(chunk or ""):gmatch("[^\r\n]+") do
+		table.insert(lines, line)
+	end
+	return lines
+end
+
 ---@param args string[] Command and arguments
 ---@param opts { cwd?: string, title?: string }|nil
 function M.run(args, opts)
@@ -90,8 +98,6 @@ function M.run(args, opts)
 		return
 	end
 
-	local cmd = args[1]
-	local cmd_args = { unpack(args, 2) }
 	local base_title = opts.title or table.concat(args, " ")
 
 	close_current()
@@ -118,54 +124,59 @@ function M.run(args, opts)
 		end)
 	end
 
-	require("plenary.job")
-		:new({
-			command = cmd,
-			args = cmd_args,
-			cwd = opts.cwd,
-			on_stdout = function(_, data)
-				if data then
-					append(data)
+	local function finish(ok, message)
+		vim.defer_fn(function()
+			spinner:stop()
+			_current_spinner = nil
+			local icon = ok and "✔" or "✖"
+			local status = ok and "Done." or message
+			table.insert(output_lines, " " .. icon .. " " .. status)
+			set_lines(buf, win, output_lines)
+			set_title(win, " " .. icon .. " " .. base_title .. " ")
+			if vim.api.nvim_buf_is_valid(buf) then
+				local hl = ok and "DiagnosticOk" or "DiagnosticError"
+				local last = #output_lines - 1
+				local line_len = #(vim.api.nvim_buf_get_lines(buf, last, last + 1, false)[1] or "")
+				vim.api.nvim_buf_set_extmark(
+					buf,
+					ns,
+					last,
+					0,
+					{ end_row = last, end_col = line_len, hl_group = hl, hl_eol = true }
+				)
+			end
+			vim.defer_fn(function()
+				if _current_win == win then
+					close_current()
 				end
-			end,
-			on_stderr = function(_, data)
-				if data then
-					append(data)
-				end
-			end,
-			on_exit = function(_, return_val)
-				vim.defer_fn(function()
-					spinner:stop()
-					_current_spinner = nil
-					vim.schedule(function()
-						local ok = return_val == 0
-						local icon = ok and "✔" or "✖"
-						local status = ok and "Done." or ("Failed (exit " .. tostring(return_val) .. ").")
-						table.insert(output_lines, " " .. icon .. " " .. status)
-						set_lines(buf, win, output_lines)
-						set_title(win, " " .. icon .. " " .. base_title .. " ")
-						if vim.api.nvim_buf_is_valid(buf) then
-							local hl = ok and "DiagnosticOk" or "DiagnosticError"
-							local last = #output_lines - 1
-							local line_len = #(vim.api.nvim_buf_get_lines(buf, last, last + 1, false)[1] or "")
-							vim.api.nvim_buf_set_extmark(
-								buf,
-								ns,
-								last,
-								0,
-								{ end_row = last, end_col = line_len, hl_group = hl, hl_eol = true }
-							)
-						end
-						vim.defer_fn(function()
-							if _current_win == win then
-								close_current()
-							end
-						end, AUTO_CLOSE_MS)
-					end)
-				end, AUTO_CLOSE_MS)
-			end,
-		})
-		:start()
+			end, AUTO_CLOSE_MS)
+		end, AUTO_CLOSE_MS)
+	end
+
+	local ok, err = pcall(vim.system, args, {
+		cwd = opts.cwd,
+		text = true,
+		stdout = function(_, data)
+			for _, line in ipairs(split_lines(data)) do
+				append(line)
+			end
+		end,
+		stderr = function(_, data)
+			for _, line in ipairs(split_lines(data)) do
+				append(line)
+			end
+		end,
+	}, function(result)
+		vim.schedule(function()
+			local success = result.code == 0
+			local message = "Failed (exit " .. tostring(result.code) .. ")."
+			finish(success, message)
+		end)
+	end)
+
+	if not ok then
+		finish(false, "Failed: " .. tostring(err))
+	end
 end
 
 return M

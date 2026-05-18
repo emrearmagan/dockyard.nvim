@@ -9,11 +9,10 @@ function M.check()
 		vim.health.ok("Neovim version compatible")
 	end
 
-	local ok, _ = pcall(require, "plenary.job")
-	if ok then
-		vim.health.ok("plenary.nvim found")
+	if type(vim.system) == "function" then
+		vim.health.ok("vim.system available")
 	else
-		vim.health.error("plenary.nvim required but not found")
+		vim.health.error("vim.system unavailable; Neovim >= 0.10 required")
 	end
 
 	local has_toggleterm, _ = pcall(require, "toggleterm.terminal")
