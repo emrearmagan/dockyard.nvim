@@ -20,22 +20,21 @@ local function truncate(text, width)
 	text = tostring(text or "")
 
 	if width <= 1 then
-		return text:sub(1, width)
+		return vim.fn.strcharpart(text, 0, width)
 	end
 
 	if display_width(text) <= width then
 		return text
 	end
 
-	local out = ""
-	for ch in text:gmatch(".") do
-		if display_width(out .. ch .. "..") > width then
-			break
+	local nchars = vim.fn.strchars(text)
+	for i = nchars - 1, 0, -1 do
+		local head = vim.fn.strcharpart(text, 0, i)
+		if display_width(head) <= width - 2 then
+			return head .. ".."
 		end
-		out = out .. ch
 	end
-
-	return out .. ".."
+	return ".."
 end
 
 local function resolve_tree(opts)
