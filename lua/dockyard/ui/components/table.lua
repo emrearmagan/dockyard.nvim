@@ -12,6 +12,10 @@ local function pad_right(text, width)
 	return text .. string.rep(" ", width - w)
 end
 
+local function single_line(text)
+	return tostring(text or ""):gsub("\r\n", " "):gsub("\n", " "):gsub("\r", " ")
+end
+
 local function truncate(text, width)
 	text = tostring(text or "")
 
@@ -118,7 +122,7 @@ local function tree_prefix(row, col_index, tree)
 end
 
 local function cell_text(row, column, col_index, tree)
-	return tree_prefix(row, col_index, tree) .. tostring(row[column.key] or "")
+	return tree_prefix(row, col_index, tree) .. single_line(row[column.key])
 end
 
 local function natural_width(column, rows, col_index, tree)
