@@ -29,6 +29,7 @@ local function sync_state_from_instance(inst)
 	state.container_name = inst.container_name
 	state.entries = inst.entries
 	state.active_source = inst.active_source
+	state.sources = inst.sources or {}
 	state.max_lines = inst.max_lines
 	state.parser_sessions = inst._parser_sessions
 	state.job_ids = inst._job_ids
@@ -77,6 +78,7 @@ function M.open(container)
 	if current_id ~= container.id then
 		state.line_map = nil
 		state.filter = nil
+		state.active_source_idx = 0
 
 		local ok, err = inst:start(container)
 		if not ok then

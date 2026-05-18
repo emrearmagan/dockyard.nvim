@@ -3,6 +3,11 @@ local M = {}
 local controller = require("dockyard.ui.views.networks.controller")
 local actions = require("dockyard.ui.actions.networks")
 local ui_state = require("dockyard.ui.state")
+local help = require("dockyard.ui.popups.help")
+local resolver = require("dockyard.core.keymaps")
+
+local GROUP = "Networks"
+local INDEX = 40
 
 local function get_node_at_cursor()
 	local line = vim.api.nvim_win_get_cursor(0)[1]
@@ -26,51 +31,79 @@ end
 ---@param notify fun(msg:string,level?:"success"|"warn"|"error"|"info"|"loading")
 ---@param hooks { on_toggle?: fun(), on_remove_done?: fun(res: { ok: boolean, error?: string }|nil, ok: boolean) }|nil
 function M.setup(buf, notify, hooks)
-	local opts = { buffer = buf, silent = true, nowait = true }
-	local function open_details_at_cursor()
-		local node = get_node_at_cursor()
-		if node then
-			controller.open_details(node)
-		end
-	end
+	local items = {}
 
-	vim.keymap.set("n", "<CR>", function()
-		local node = get_network_node_at_cursor()
-		if node then
-			controller.toggle(node)
-			if hooks and hooks.on_toggle then
-				hooks.on_toggle()
-			end
-		end
-	end, opts)
-
-	vim.keymap.set("n", "d", function()
-		local node = get_network_node_at_cursor()
-		if node then
-			actions.remove(node.item, function(res, ok)
-				if hooks and hooks.on_remove_done then
-					hooks.on_remove_done(res, ok)
+	resolver.push(
+		items,
+		resolver.item("ui.toggle_node", {
+			desc = "Expand / Collapse network",
+			callback = function()
+				local node = get_network_node_at_cursor()
+				if node then
+					controller.toggle(node)
+					if hooks and hooks.on_toggle then
+						hooks.on_toggle()
+					end
 				end
-			end, notify)
-		end
-	end, opts)
+			end,
+			index = 1,
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("networks.remove", {
+			desc = "Remove selected network",
+			callback = function()
+				local node = get_network_node_at_cursor()
+				if node then
+					actions.remove(node.item, function(res, ok)
+						if hooks and hooks.on_remove_done then
+							hooks.on_remove_done(res, ok)
+						end
+					end, notify)
+				end
+			end,
+			index = 2,
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("ui.open_details", {
+			desc = "Open inspect popup",
+			callback = function()
+				local node = get_node_at_cursor()
+				if node then
+					controller.open_details(node)
+				end
+			end,
+			index = 3,
+		})
+	)
+	resolver.push(
+		items,
+		resolver.item("ui.open_panel", {
+			desc = "Open detail panel",
+			callback = function()
+				local node = get_node_at_cursor()
+				if node then
+					require("dockyard.ui.panel").open(node)
+				end
+			end,
+			index = 4,
+		})
+	)
 
-	vim.keymap.set("n", "K", open_details_at_cursor, opts)
-
-	vim.keymap.set("n", "p", function()
-		local node = get_node_at_cursor()
-		if node then
-			require("dockyard.ui.panel").open(node)
-		end
-	end, opts)
+	help.register(GROUP, items, { buffer = buf, index = INDEX })
 end
 
 ---@param buf number
 function M.teardown(buf)
-	pcall(vim.keymap.del, "n", "<CR>", { buffer = buf })
-	pcall(vim.keymap.del, "n", "d", { buffer = buf })
-	pcall(vim.keymap.del, "n", "K", { buffer = buf })
-	pcall(vim.keymap.del, "n", "p", { buffer = buf })
+	local items = {}
+	resolver.push(items, resolver.removal("ui.toggle_node"))
+	resolver.push(items, resolver.removal("networks.remove"))
+	resolver.push(items, resolver.removal("ui.open_details"))
+	resolver.push(items, resolver.removal("ui.open_panel"))
+	help.remove(GROUP, items, { buffer = buf })
 end
 
 return M

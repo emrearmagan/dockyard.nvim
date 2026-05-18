@@ -25,13 +25,13 @@ local function truncate(text, width)
 
 	local out = ""
 	for ch in text:gmatch(".") do
-		if display_width(out .. ch .. "…") > width then
+		if display_width(out .. ch .. "..") > width then
 			break
 		end
 		out = out .. ch
 	end
 
-	return out .. "…"
+	return out .. ".."
 end
 
 local function resolve_tree(opts)
@@ -353,7 +353,7 @@ function M.render(opts)
 	end
 
 	-- Keep both left and right padding so table aligns with navbar framing.
-	compute_widths(columns, rows, math.max(width - (margin * 2), 1), gap_after, tree, fill)
+	compute_widths(columns, rows, math.max(width - (margin * 2) - 1, 1), gap_after, tree, fill)
 
 	local lines = {}
 	local line_map = {}

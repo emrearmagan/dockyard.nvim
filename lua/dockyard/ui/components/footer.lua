@@ -108,7 +108,7 @@ local function segments_for()
 			hl = notice.text ~= "" and notice.hl_group or "DockyardMuted",
 			alignment = "right",
 		},
-		{ text = "? help", hl = "DockyardHelpKey", alignment = "right" },
+		{ text = "g? help", hl = "DockyardHelpKey", alignment = "right" },
 	}
 
 	for _, seg in ipairs(right) do

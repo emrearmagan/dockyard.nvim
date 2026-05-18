@@ -1,5 +1,7 @@
 local M = {}
 
+local DOCKER_ICON = "󰡨"
+
 local ICONS = {
 	container = {
 		running = "●",
@@ -27,12 +29,13 @@ local ICONS = {
 	},
 	view = {
 		containers = "󰏗",
-		compose = "󰡨",
+		compose = DOCKER_ICON,
 		images = "󰆼",
 		networks = "󰖩",
 		volumes = "󰋊",
 		fallback = "•",
 	},
+	docker = DOCKER_ICON,
 	success = "✔",
 	warn = "⚠",
 	error = "✖",

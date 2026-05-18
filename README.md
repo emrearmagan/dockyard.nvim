@@ -1,11 +1,28 @@
+[![Neovim](https://img.shields.io/badge/Neovim-0.10+-blue.svg)](https://neovim.io/)
+[![Version](https://img.shields.io/github/v/tag/emrearmagan/dockyard.nvim.svg)](https://github.com/emrearmagan/dockyard.nvim/tags)
+[![License](https://img.shields.io/github/license/emrearmagan/dockyard.nvim?style=flat-square&color=blue)](LICENSE)
+
 # Dockyard.nvim
 
 Interactive Docker dashboard directly in your editor. It lets you view and manage containers, images, networks, and logs
 
-![loglens](https://github.com/user-attachments/assets/75c21845-f245-428a-b73d-0fdb975b6b9f)
-
 > [!CAUTION]
 > **Still in early development, will have breaking changes!**
+
+<table>
+  <thead>
+    <tr>
+      <th width="50%" align="center">Dockyard</th>
+      <th width="50%" align="center">Detail Panel</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td width="50%"><img alt="LogLens" src="https://github.com/user-attachments/assets/06291218-02b6-4733-96a6-27d8ac7dd7b7"></td>
+      <td width="50%"><img alt="LogLens" src="https://github.com/user-attachments/assets/1ed7f58d-b407-4b0b-ba8e-ad719e226702"></td>
+    </tr>
+  </tbody>
+</table>
 
 ## Introduction
 
@@ -196,41 +213,53 @@ Each rule supports:
 
 ## Keymaps
 
-### Main UI
+Press `g?` inside any Dockyard buffer to see all bindings for the current view.
 
-| Context    | Key                 | Action                    |
-| ---------- | ------------------- | ------------------------- |
-| Global     | `q`                 | Close Dockyard            |
-| Global     | `R`                 | Refresh current tab       |
-| Global     | `<Tab>` / `<S-Tab>` | Next / previous tab       |
-| Global     | `j` / `k`           | Move cursor               |
-| Global     | `p`                 | Open detail panel         |
-| Global     | `K`                 | Open details popup        |
-| Global     | `<CR>`              | Expand / Collapse         |
-| Global     | `?`                 | Open help popup           |
-| Containers | `s`                 | Toggle start / stop       |
-| Containers | `x`                 | Stop container            |
-| Containers | `r`                 | Restart container         |
-| Containers | `d`                 | Remove container          |
-| Containers | `T`                 | Open shell                |
-| Containers | `L`                 | Open LogLens              |
-| Images     | `d`                 | Remove image              |
-| Images     | `P`                 | Prune unused images       |
-| Networks   | `d`                 | Remove network            |
-| Volumes    | `d`                 | Remove volume             |
-| Volumes    | `K`                 | Open details popup        |
-| Volumes    | `o`                 | Open mountpoint in Neovim |
+Set an action to `false` to disable it, or set it to a list to add aliases.
 
-### LogLens
-
-| Key          | Action           |
-| ------------ | ---------------- |
-| `q`          | Close LogLens    |
-| `f`          | Toggle follow    |
-| `r`          | Toggle raw mode  |
-| `/`          | Set filter       |
-| `c`          | Clear filter     |
-| `<CR>` / `K` | Open entry popup |
+```lua
+require("dockyard").setup({
+  keymaps = {
+    ui = {
+      help = "g?",
+      close = "q", -- false would disable it
+      refresh = "R",
+      next_view = { "<Tab>", "]" }, -- list adds aliases
+      prev_view = { "<S-Tab>", "[" },
+      toggle_node = "<CR>",
+      open_details = "K",
+      open_panel = "p",
+    },
+    containers = {
+      toggle_start_stop = "s",
+      stop = "x",
+      restart = "r",
+      remove = "d",
+      open_terminal = "T",
+      open_logs = "L",
+    },
+    images = {
+      remove = "d",
+      prune = "P",
+    },
+    networks = {
+      remove = "d",
+    },
+    volumes = {
+      remove = "d",
+    },
+    loglens = {
+      close = "q",
+      toggle_follow = "f",
+      toggle_raw = "r",
+      filter = "/",
+      clear_filter = "c",
+      open_detail = { "<CR>", "K" },
+      help = "g?",
+    },
+  },
+})
+```
 
 ## License
 
