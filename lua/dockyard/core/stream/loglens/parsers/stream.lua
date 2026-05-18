@@ -15,9 +15,9 @@ local function build_command(container, source, tail)
 		-- process with `exec tail` (which keeps the same PID). We capture this PID
 		-- from the first stdout line so we can explicitly kill the tail process on
 		-- stop — Docker does not signal exec'd processes when the host connection drops.
-    --
-    -- Just in case we also use the jobs.lua to track running processes, so we have a fallback cleanup mechanism if the PID capture fails for some reason.
-		-- See: https://github.com/nvim-lua/plenary.nvim/issues/328
+		--
+		-- Just in case we also use jobs.lua to track running processes, so
+		-- there is a fallback cleanup mechanism if PID capture fails.
 		return {
 			"docker",
 			"exec",

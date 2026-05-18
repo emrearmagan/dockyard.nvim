@@ -1,7 +1,5 @@
 local M = {}
 
-local job = require("plenary.job")
-
 ---Detect whether an container is in an in-progress transition.
 ---@param container Container|nil
 ---@return boolean
@@ -36,24 +34,29 @@ function M.has_transitional_status(containers)
 end
 
 local function run_docker_command(args, callback)
-	job:new({
-		command = "docker",
-		args = args,
-		on_exit = function(j, return_val)
-			vim.schedule(function()
-				if return_val == 0 then
-					local result = table.concat(j:result(), "\n")
-					callback({ ok = true, data = result })
-				else
-					local stderr = table.concat(j:stderr_result(), "\n")
-					callback({
-						ok = false,
-						error = stderr ~= "" and stderr or "Docker command failed",
-					})
-				end
-			end)
-		end,
-	}):start()
+	local cmd = vim.list_extend({ "docker" }, args)
+	local ok, err = pcall(vim.system, cmd, { text = true }, function(result)
+		vim.schedule(function()
+			if result.code == 0 then
+				callback({ ok = true, data = result.stdout or "" })
+			else
+				local stderr = vim.trim(result.stderr or "")
+				callback({
+					ok = false,
+					error = stderr ~= "" and stderr or "Docker command failed",
+				})
+			end
+		end)
+	end)
+
+	if not ok then
+		vim.schedule(function()
+			callback({
+				ok = false,
+				error = tostring(err),
+			})
+		end)
+	end
 end
 
 ---@alias ContainerStatus
