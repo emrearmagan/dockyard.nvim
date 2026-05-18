@@ -151,6 +151,7 @@ local function open_with(mode, win_config_fn)
 		{ name = "DockyardFloat", desc = "Open Dockyard floating UI" },
 		{ name = "DockyardBuild", desc = "Build Docker image from current Dockerfile" },
 		{ name = "DockyardRun", desc = "Run Docker Compose services" },
+		{ name = "DockyardFiles", desc = "Browse a container's filesystem" },
 	}, { buffer = state.buf_id, index = 999 })
 
 	return state.win_id

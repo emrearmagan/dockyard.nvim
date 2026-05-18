@@ -83,6 +83,7 @@ M.options = {
 			remove = "d",
 			open_terminal = "T",
 			open_logs = "L",
+			open_files = "f",
 		},
 		images = {
 			remove = "d",
@@ -114,6 +115,7 @@ local function create_commands()
 	pcall(vim.api.nvim_del_user_command, "DockyardFull")
 	pcall(vim.api.nvim_del_user_command, "DockyardBuild")
 	pcall(vim.api.nvim_del_user_command, "DockyardRun")
+	pcall(vim.api.nvim_del_user_command, "DockyardFiles")
 
 	vim.api.nvim_create_user_command("Dockyard", function()
 		require("dockyard.ui").open_full()
@@ -134,6 +136,29 @@ local function create_commands()
 			require("dockyard.commands").run_all()
 		end
 	end, { desc = "Run Docker Compose services", range = true })
+
+	vim.api.nvim_create_user_command("DockyardFiles", function(cmd_opts)
+		local container = cmd_opts.fargs[1]
+		local path = cmd_opts.fargs[2] or "/"
+		if not container or container == "" then
+			vim.notify("DockyardFiles: container required", vim.log.levels.ERROR)
+			return
+		end
+		require("dockyard.files").open(container, path)
+	end, {
+		desc = "Browse a container's filesystem",
+		nargs = "+",
+		complete = function(arg_lead)
+			local out = vim.fn.systemlist({ "docker", "ps", "--format", "{{.Names}}" })
+			local matches = {}
+			for _, name in ipairs(out) do
+				if name:find(arg_lead, 1, true) == 1 then
+					table.insert(matches, name)
+				end
+			end
+			return matches
+		end,
+	})
 end
 
 ---@param opts? DockyardConfig

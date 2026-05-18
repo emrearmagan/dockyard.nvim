@@ -19,6 +19,7 @@ local M = {}
 ---@field remove? DockyardKeymapValue
 ---@field open_terminal? DockyardKeymapValue
 ---@field open_logs? DockyardKeymapValue
+---@field open_files? DockyardKeymapValue
 
 ---@class DockyardImagesKeymaps
 ---@field remove? DockyardKeymapValue
@@ -190,6 +191,7 @@ local CONTAINERS_IDS = {
 	"containers.remove",
 	"containers.open_terminal",
 	"containers.open_logs",
+	"containers.open_files",
 }
 
 local IMAGES_IDS = {
