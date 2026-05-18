@@ -33,7 +33,9 @@ function M.has_transitional_status(containers)
 	return false
 end
 
-local function run_docker_command(args, callback)
+---@param args string[]
+---@param callback fun(result: { ok: boolean, data?: string, error?: string })
+function M.run(args, callback)
 	local cmd = vim.list_extend({ "docker" }, args)
 	local ok, err = pcall(vim.system, cmd, { text = true }, function(result)
 		vim.schedule(function()
@@ -153,7 +155,7 @@ function M.list_containers(callback)
 		"}",
 	}, "")
 
-	run_docker_command({ "ps", "-a", "--format", format }, function(result)
+	M.run({ "ps", "-a", "--format", format }, function(result)
 		if not result.ok then
 			callback(result)
 			return
@@ -257,7 +259,7 @@ M.list_images = function(callback)
 		"}",
 	}, "")
 
-	run_docker_command({ "images", "--format", format }, function(result)
+	M.run({ "images", "--format", format }, function(result)
 		if not result.ok then
 			callback(result)
 			return
@@ -297,7 +299,7 @@ M.list_networks = function(callback)
 		"}",
 	}, "")
 
-	run_docker_command({ "network", "ls", "--format", format }, function(result)
+	M.run({ "network", "ls", "--format", format }, function(result)
 		if not result.ok then
 			callback(result)
 			return
@@ -337,7 +339,7 @@ M.list_volumes = function(callback)
 		"}",
 	}, "")
 
-	run_docker_command({ "volume", "ls", "--format", format }, function(result)
+	M.run({ "volume", "ls", "--format", format }, function(result)
 		if not result.ok then
 			callback(result)
 			return
@@ -362,7 +364,7 @@ end
 --- @param action "rm"
 --- @param callback fun(result: {ok: boolean, error?: string})
 M.volume_action = function(volume_name, action, callback)
-	run_docker_command({ "volume", action, volume_name }, function(result)
+	M.run({ "volume", action, volume_name }, function(result)
 		if result.ok then
 			callback({ ok = true })
 		else
@@ -375,7 +377,7 @@ end
 --- @param action "start"|"stop"|"restart"|"rm"
 --- @param callback fun(result: {ok: boolean, error?: string})
 M.container_action = function(container_id, action, callback)
-	run_docker_command({ action, container_id }, function(result)
+	M.run({ action, container_id }, function(result)
 		if result.ok then
 			callback({ ok = true, error = nil })
 		else
@@ -388,7 +390,7 @@ end
 --- @param action "rm"
 --- @param callback fun(result: {ok: boolean, error?: string})
 M.image_action = function(image_id, action, callback)
-	run_docker_command({ "image", action, image_id }, function(result)
+	M.run({ "image", action, image_id }, function(result)
 		if result.ok then
 			callback({ ok = true })
 		else
@@ -399,7 +401,7 @@ end
 
 --- @param callback fun(result: {ok: boolean, error?: string})
 M.image_prune = function(callback)
-	run_docker_command({ "image", "prune", "-f", "-a" }, function(result)
+	M.run({ "image", "prune", "-f", "-a" }, function(result)
 		if result.ok then
 			callback({ ok = true })
 		else
@@ -412,7 +414,7 @@ end
 --- @param action "rm"
 --- @param callback fun(result: {ok: boolean, error?: string})
 M.network_action = function(network_id, action, callback)
-	run_docker_command({ "network", action, network_id }, function(result)
+	M.run({ "network", action, network_id }, function(result)
 		if result.ok then
 			callback({ ok = true })
 		else
@@ -480,7 +482,7 @@ M.container_stats = function(container_id, callback)
 		"}",
 	}, "")
 
-	run_docker_command({ "stats", "--no-stream", "--format", format, container_id }, function(result)
+	M.run({ "stats", "--no-stream", "--format", format, container_id }, function(result)
 		if not result.ok then
 			callback(result)
 			return
@@ -505,7 +507,7 @@ end
 --- @param container_id string
 --- @param callback fun(result: {ok: boolean, data?: string, error?: string})
 M.container_top = function(container_id, callback)
-	run_docker_command({ "top", container_id }, function(result)
+	M.run({ "top", container_id }, function(result)
 		if not result.ok then
 			callback(result)
 			return
@@ -518,7 +520,7 @@ end
 --- @param id string
 --- @param callback fun(result: {ok: boolean, data?: table, error?: string})
 M.inspect = function(type, id, callback)
-	run_docker_command({ "inspect", "--type", type, id }, function(result)
+	M.run({ "inspect", "--type", type, id }, function(result)
 		if not result.ok then
 			callback(result)
 			return
