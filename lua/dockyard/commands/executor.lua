@@ -1,5 +1,7 @@
 local M = {}
 
+local statusline = require("dockyard.ui.statusline")
+
 local WIN_WIDTH = 52
 local RIGHT_PADDING = 4
 local MAX_LINES = 5
@@ -27,6 +29,7 @@ vim.api.nvim_create_autocmd("VimLeavePre", {
 local ns = vim.api.nvim_create_namespace("dockyard.executor")
 
 local function open_notice(title)
+	local source_win = vim.api.nvim_get_current_win()
 	local buf = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_set_option_value("buftype", "nofile", { buf = buf })
 	vim.api.nvim_set_option_value("bufhidden", "wipe", { buf = buf })
@@ -49,6 +52,7 @@ local function open_notice(title)
 	})
 	vim.api.nvim_set_option_value("wrap", false, { win = win })
 	vim.api.nvim_set_option_value("cursorline", false, { win = win })
+	statusline.inherit(win, source_win)
 
 	vim.keymap.set("n", "q", function()
 		close_current()

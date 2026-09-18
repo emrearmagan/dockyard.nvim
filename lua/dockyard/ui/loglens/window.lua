@@ -1,5 +1,7 @@
 local M = {}
 
+local statusline = require("dockyard.ui.statusline")
+
 local LOGLENS_BUFFER_NAME = "dockyard://loglens"
 
 ---@param state LogLensState
@@ -60,6 +62,33 @@ M.create_window_fullscreen = function(buf, ui_state)
 	vim.api.nvim_set_option_value("wrap", false, { win = win })
 	vim.api.nvim_set_option_value("cursorline", true, { win = win })
 	vim.api.nvim_set_option_value("winfixheight", true, { win = win })
+	statusline.inherit(win, target_win)
+
+	return win
+end
+
+---Create a bottom split below the current window, standalone (no Dockyard UI).
+---@param buf number
+---@return number|nil win_id
+M.create_window_split = function(buf)
+	local source_win = vim.api.nvim_get_current_win()
+	local total_h = vim.o.lines
+	local split_height = math.max(10, math.floor(total_h * 0.35))
+	vim.cmd(("belowright %dsplit"):format(split_height))
+	local win = vim.api.nvim_get_current_win()
+	if not (win and vim.api.nvim_win_is_valid(win)) then
+		vim.notify("LogLens: Failed to create split window", vim.log.levels.ERROR)
+		return nil
+	end
+
+	vim.api.nvim_win_set_buf(win, buf)
+	vim.api.nvim_set_option_value("number", false, { win = win })
+	vim.api.nvim_set_option_value("relativenumber", false, { win = win })
+	vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
+	vim.api.nvim_set_option_value("wrap", false, { win = win })
+	vim.api.nvim_set_option_value("cursorline", true, { win = win })
+	vim.api.nvim_set_option_value("winfixheight", true, { win = win })
+	statusline.inherit(win, source_win)
 
 	return win
 end
@@ -67,6 +96,7 @@ end
 ---@param buf number
 ---@return number|nil win_id
 M.create_window_floating = function(buf)
+	local source_win = vim.api.nvim_get_current_win()
 	local total_w = vim.o.columns
 	local total_h = vim.o.lines
 
@@ -95,6 +125,7 @@ M.create_window_floating = function(buf)
 	vim.api.nvim_set_option_value("signcolumn", "no", { win = win })
 	vim.api.nvim_set_option_value("wrap", false, { win = win })
 	vim.api.nvim_set_option_value("cursorline", true, { win = win })
+	statusline.inherit(win, source_win)
 
 	return win
 end

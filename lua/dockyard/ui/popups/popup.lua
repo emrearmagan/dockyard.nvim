@@ -1,5 +1,7 @@
 local M = {}
 
+local statusline = require("dockyard.ui.statusline")
+
 local popup_seq = 0
 
 local function clamp_span(line, span)
@@ -114,6 +116,7 @@ function M.create(opts)
 
 	local function open(open_opts)
 		open_opts = open_opts or {}
+		local source_win = vim.api.nvim_get_current_win()
 		if open_opts.title ~= nil then
 			state.title = open_opts.title
 		end
@@ -160,6 +163,7 @@ function M.create(opts)
 		end
 
 		apply_win_style(state.win)
+		statusline.inherit(state.win, source_win)
 		local map_opts = { buffer = buf, nowait = true, silent = true }
 		vim.keymap.set("n", "q", close, map_opts)
 		vim.keymap.set("n", "<Esc>", close, map_opts)

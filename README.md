@@ -210,6 +210,7 @@ Each rule supports:
 - `:DockyardFloat` - open floating UI
 - `:DockyardBuild` - build a Docker image from the nearest `Dockerfile`. Tags the image after the parent directory name.
 - `:DockyardRun` - runs Docker Compose services (`docker compose up -d --force-recreate`). SUpports visual selection.
+- `:DockyardFiles <container> [path]` - browse a container's filesystem at `path` (defaults to `/`).
 
 ## Keymaps
 

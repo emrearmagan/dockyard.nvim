@@ -10,18 +10,25 @@ local function build_ctx(source)
 	}
 end
 
+-- strip_ansi removes ANSI CSI escape sequences (colors, cursor moves, etc.)
+-- so log lines colored by logrus/zap/etc. parse as plain text.
+local function strip_ansi(s)
+	return (s:gsub("\27%[[%d;?]*[ -/]*[@-~]", ""))
+end
+
 ---@param source LogSource
 ---@param raw string
 ---@return LogLensEntry|nil
 local function format_row(source, raw)
-	local ok, row = pcall(source.format, raw, build_ctx(source))
+	local clean = strip_ansi(raw)
+	local ok, row = pcall(source.format, clean, build_ctx(source))
 	if not ok or type(row) ~= "table" then
 		return nil
 	end
 
 	return {
-		raw = raw,
-		formatted = raw,
+		raw = clean,
+		formatted = clean,
 		data = row,
 	}
 end

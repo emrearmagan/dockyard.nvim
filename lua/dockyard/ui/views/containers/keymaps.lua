@@ -161,6 +161,20 @@ function M.setup(buf, notify, hooks)
 		})
 	)
 
+	resolver.push(
+		items,
+		resolver.item("containers.open_files", {
+			desc = "Browse container filesystem",
+			callback = function()
+				local item = get_item_at_cursor()
+				if item and item.kind == "container" then
+					require("dockyard.files").open(item.item.name, "/")
+				end
+			end,
+			index = 10,
+		})
+	)
+
 	help.register(GROUP, items, { buffer = buf, index = INDEX })
 end
 
@@ -176,6 +190,7 @@ function M.teardown(buf)
 	resolver.push(items, resolver.removal("containers.open_logs"))
 	resolver.push(items, resolver.removal("ui.open_details"))
 	resolver.push(items, resolver.removal("ui.open_panel"))
+	resolver.push(items, resolver.removal("containers.open_files"))
 	help.remove(GROUP, items, { buffer = buf })
 	controller.on_teardown()
 end
