@@ -116,6 +116,7 @@ local function create_commands()
 	pcall(vim.api.nvim_del_user_command, "DockyardBuild")
 	pcall(vim.api.nvim_del_user_command, "DockyardRun")
 	pcall(vim.api.nvim_del_user_command, "DockyardFiles")
+	pcall(vim.api.nvim_del_user_command, "DockyardLogs")
 
 	vim.api.nvim_create_user_command("Dockyard", function()
 		require("dockyard.ui").open_full()
@@ -136,6 +137,49 @@ local function create_commands()
 			require("dockyard.commands").run_all()
 		end
 	end, { desc = "Run Docker Compose services", range = true })
+
+	vim.api.nvim_create_user_command("DockyardLogs", function(cmd_opts)
+		local name = cmd_opts.fargs[1]
+		if not name or name == "" then
+			vim.notify("DockyardLogs: container required", vim.log.levels.ERROR)
+			return
+		end
+		require("dockyard.core.docker").list_containers(function(result)
+			if not result.ok or type(result.data) ~= "table" then
+				vim.schedule(function()
+					vim.notify("DockyardLogs: failed to list containers", vim.log.levels.ERROR)
+				end)
+				return
+			end
+			local match
+			for _, c in ipairs(result.data) do
+				if c.name == name or (c.name and c.name:gsub("^/", "") == name) then
+					match = c
+					break
+				end
+			end
+			vim.schedule(function()
+				if not match then
+					vim.notify("DockyardLogs: container '" .. name .. "' not found", vim.log.levels.ERROR)
+					return
+				end
+				require("dockyard.ui.loglens").open(match, { mode = "split" })
+			end)
+		end)
+	end, {
+		desc = "Open LogLens for a container",
+		nargs = 1,
+		complete = function(arg_lead)
+			local out = vim.fn.systemlist({ "docker", "ps", "--format", "{{.Names}}" })
+			local matches = {}
+			for _, n in ipairs(out) do
+				if n:find(arg_lead, 1, true) == 1 then
+					table.insert(matches, n)
+				end
+			end
+			return matches
+		end,
+	})
 
 	vim.api.nvim_create_user_command("DockyardFiles", function(cmd_opts)
 		local container = cmd_opts.fargs[1]

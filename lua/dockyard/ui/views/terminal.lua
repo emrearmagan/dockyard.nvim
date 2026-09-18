@@ -2,6 +2,8 @@
 
 local M = {}
 
+local statusline = require("dockyard.ui.statusline")
+
 -- One Sessions per container. Those are for reference
 local toggleterm_sessions = {}
 local float_session = nil
@@ -15,7 +17,7 @@ local function is_valid_win(win)
 	return win ~= nil and vim.api.nvim_win_is_valid(win)
 end
 
-local function focus_term_if_open(term)
+local function focus_term_if_open(term, source_win)
 	if term == nil then
 		return false
 	end
@@ -23,12 +25,13 @@ local function focus_term_if_open(term)
 		return false
 	end
 
+	statusline.inherit(term.window, source_win)
 	vim.api.nvim_set_current_win(term.window)
 	vim.cmd("startinsert")
 	return true
 end
 
-local function open_panel_terminal(Terminal, container_id, shell)
+local function open_panel_terminal(Terminal, container_id, shell, source_win)
 	if float_session ~= nil and float_session.container_id ~= container_id then
 		pcall(function()
 			float_session.term:close()
@@ -71,7 +74,7 @@ local function open_panel_terminal(Terminal, container_id, shell)
 		}
 	end
 
-	if focus_term_if_open(float_session.term) then
+	if focus_term_if_open(float_session.term, source_win) then
 		return true
 	end
 
@@ -83,10 +86,14 @@ local function open_panel_terminal(Terminal, container_id, shell)
 		return false
 	end
 
+	if is_valid_win(float_session.term.window) then
+		statusline.inherit(float_session.term.window, source_win)
+	end
+
 	return true
 end
 
-local function open_full_terminal(Terminal, container_id, shell, target_win)
+local function open_full_terminal(Terminal, container_id, shell, target_win, source_win)
 	local session = toggleterm_sessions[container_id]
 	if session == nil then
 		local ok_new, new_session = pcall(Terminal.new, Terminal, {
@@ -116,7 +123,7 @@ local function open_full_terminal(Terminal, container_id, shell, target_win)
 		toggleterm_sessions[container_id] = session
 	end
 
-	if focus_term_if_open(session) then
+	if focus_term_if_open(session, source_win) then
 		return true
 	end
 
@@ -129,6 +136,10 @@ local function open_full_terminal(Terminal, container_id, shell, target_win)
 	if not ok_open then
 		vim.notify("Dockyard: failed to open toggleterm session", vim.log.levels.ERROR)
 		return false
+	end
+
+	if is_valid_win(session.window) then
+		statusline.inherit(session.window, source_win)
 	end
 
 	return true
@@ -146,13 +157,14 @@ local function open_with_toggleterm(container_id, shell, ctx)
 	local Terminal = mod.Terminal
 	local mode = (ctx and ctx.mode) or "panel"
 	local target_win = ctx and ctx.win
+	local source_win = is_valid_win(target_win) and target_win or vim.api.nvim_get_current_win()
 
 	if mode == "panel" then
-		return open_panel_terminal(Terminal, container_id, shell)
+		return open_panel_terminal(Terminal, container_id, shell, source_win)
 	end
 
 	if mode == "full" then
-		return open_full_terminal(Terminal, container_id, shell, target_win)
+		return open_full_terminal(Terminal, container_id, shell, target_win, source_win)
 	end
 
 	return false

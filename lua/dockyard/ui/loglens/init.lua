@@ -4,6 +4,7 @@ local ui_state = require("dockyard.ui.state")
 local keymaps = require("dockyard.ui.loglens.keymaps")
 local window = require("dockyard.ui.loglens.window")
 local log_core = require("dockyard.core.stream.loglens.core")
+local statusline = require("dockyard.ui.statusline")
 
 local M = {}
 
@@ -37,16 +38,26 @@ end
 
 ---Open LogLens for a container.
 ---@param container Container|nil
-function M.open(container)
+---@param opts? { mode?: "auto"|"split"|"floating"|"fullscreen" }
+function M.open(container, opts)
 	if not container or not container.id then
 		vim.notify("LogLens: No valid container selected", vim.log.levels.WARN)
 		return
 	end
 
+	local source_win = vim.api.nvim_get_current_win()
+	local mode = opts and opts.mode or "auto"
+
 	if not (state.is_open() and state.has_valid_buffer()) then
 		local buf = window.create_buffer(state)
 		local win
-		if ui_state.mode == "panel" then
+		if mode == "split" then
+			win = window.create_window_split(buf)
+		elseif mode == "floating" then
+			win = window.create_window_floating(buf)
+		elseif mode == "fullscreen" then
+			win = window.create_window_fullscreen(buf, ui_state)
+		elseif ui_state.mode == "panel" then
 			win = window.create_window_floating(buf)
 		else
 			win = window.create_window_fullscreen(buf, ui_state)
@@ -90,6 +101,7 @@ function M.open(container)
 		renderer.render(state)
 	end
 
+	statusline.inherit(state.win_id, source_win)
 	vim.api.nvim_set_current_win(state.win_id)
 end
 

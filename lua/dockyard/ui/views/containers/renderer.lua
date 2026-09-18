@@ -7,7 +7,7 @@ local config = require("dockyard.config")
 local table_view = require("dockyard.ui.components.table")
 local header = require("dockyard.ui.components.header")
 local navbar = require("dockyard.ui.components.navbar")
-local footer = require("dockyard.ui.components.footer")
+local statusline = require("dockyard.ui.statusline")
 local ui_utils = require("dockyard.ui.utils")
 local highlights = require("dockyard.ui.highlights")
 local view_state = require("dockyard.ui.views.containers.state")
@@ -116,7 +116,7 @@ local function build_compose_rows(items)
 end
 
 ---@param items Container[]
-local function set_footer_items(items)
+local function set_statusline_items(items)
 	local stats = {
 		running = 0,
 		paused = 0,
@@ -140,34 +140,31 @@ local function set_footer_items(items)
 
 	local segments = {}
 	if stats.running > 0 then
-		table.insert(
-			segments,
-			{
-				text = string.format("%s %d", icons.container_icon("running"), stats.running),
-				hl = "DockyardRunning",
-			}
-		)
+		table.insert(segments, {
+			text = string.format("%s %d", icons.container_icon("running"), stats.running),
+			hl_group = "DockyardFooterSuccess",
+		})
 	end
 	if stats.paused > 0 then
-		table.insert(
-			segments,
-			{ text = string.format("%s %d", icons.container_icon("paused"), stats.paused), hl = "DockyardPaused" }
-		)
+		table.insert(segments, {
+			text = string.format("%s %d", icons.container_icon("paused"), stats.paused),
+			hl_group = "DockyardFooterWarning",
+		})
 	end
 	if stats.restarting > 0 then
 		table.insert(segments, {
 			text = string.format("%s %d", icons.container_icon("restarting"), stats.restarting),
-			hl = "DockyardPending",
+			hl_group = "DockyardFooterPending",
 		})
 	end
 	if stats.exited > 0 then
-		table.insert(
-			segments,
-			{ text = string.format("%s %d", icons.container_icon("exited"), stats.exited), hl = "DockyardStopped" }
-		)
+		table.insert(segments, {
+			text = string.format("%s %d", icons.container_icon("exited"), stats.exited),
+			hl_group = "DockyardFooterError",
+		})
 	end
 
-	footer.set_items(segments)
+	statusline.set_items(segments)
 end
 
 ---@param width number
@@ -348,7 +345,7 @@ function M.render()
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	ui_utils.apply_spans(buf, spans)
 	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
-	set_footer_items(items)
+	set_statusline_items(items)
 end
 
 return M

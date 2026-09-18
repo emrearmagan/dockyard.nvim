@@ -7,7 +7,7 @@ local config = require("dockyard.config")
 local table_view = require("dockyard.ui.components.table")
 local header = require("dockyard.ui.components.header")
 local navbar = require("dockyard.ui.components.navbar")
-local footer = require("dockyard.ui.components.footer")
+local statusline = require("dockyard.ui.statusline")
 local ui_utils = require("dockyard.ui.utils")
 local highlights = require("dockyard.ui.highlights")
 local view_state = require("dockyard.ui.views.images.state")
@@ -131,7 +131,7 @@ end
 
 ---@param images Image[]
 ---@param containers Container[]
-local function set_footer_items(images, containers)
+local function set_statusline_items(images, containers)
 	local attached = 0
 	for _, c in ipairs(containers) do
 		if c.image and c.image ~= "" then
@@ -139,9 +139,15 @@ local function set_footer_items(images, containers)
 		end
 	end
 
-	footer.set_items({
-		{ text = string.format("%s %d", icons.image_icon("default"), #images), hl = "DockyardImage" },
-		{ text = string.format("%s %d", icons.view_icon("containers"), attached), hl = "DockyardRunning" },
+	statusline.set_items({
+		{
+			text = string.format("%s %d", icons.image_icon("default"), #images),
+			hl_group = "DockyardFooterAccent",
+		},
+		{
+			text = string.format("%s %d", icons.view_icon("containers"), attached),
+			hl_group = "DockyardFooterSuccess",
+		},
 	})
 end
 
@@ -282,7 +288,7 @@ function M.render()
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	ui_utils.apply_spans(buf, spans)
 	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
-	set_footer_items(image, container)
+	set_statusline_items(image, container)
 end
 
 return M

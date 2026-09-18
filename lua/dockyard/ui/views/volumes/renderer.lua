@@ -6,7 +6,7 @@ local config = require("dockyard.config")
 local table_view = require("dockyard.ui.components.table")
 local header = require("dockyard.ui.components.header")
 local navbar = require("dockyard.ui.components.navbar")
-local footer = require("dockyard.ui.components.footer")
+local statusline = require("dockyard.ui.statusline")
 local ui_utils = require("dockyard.ui.utils")
 local view_state = require("dockyard.ui.views.volumes.state")
 local icons = require("dockyard.ui.icons")
@@ -43,9 +43,12 @@ local function build_rows(volumes)
 end
 
 ---@param volumes Volume[]
-local function set_footer_items(volumes)
-	footer.set_items({
-		{ text = string.format("%s %d", icons.volume_icon("default"), #volumes), hl = "DockyardImage" },
+local function set_statusline_items(volumes)
+	statusline.set_items({
+		{
+			text = string.format("%s %d", icons.volume_icon("default"), #volumes),
+			hl_group = "DockyardFooterAccent",
+		},
 	})
 end
 
@@ -147,7 +150,7 @@ function M.render()
 	vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
 	ui_utils.apply_spans(buf, spans)
 	vim.api.nvim_set_option_value("modifiable", false, { buf = buf })
-	set_footer_items(volumes)
+	set_statusline_items(volumes)
 end
 
 return M
